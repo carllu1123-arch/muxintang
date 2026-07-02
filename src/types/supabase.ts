@@ -1,7 +1,7 @@
 /**
  * 牧心堂 · Supabase Database 类型定义
  *
- * 与 supabase/migrations/0001_init.sql 严格对应。
+ * 与 src/lib/supabase-migrations.sql 严格对应。
  * 如改了 schema，请同步更新本文件。
  *
  * 使用方法：
@@ -20,7 +20,7 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      profiles: {
+      user_profiles: {
         Row: {
           id: string;
           display_name: string;
@@ -43,7 +43,7 @@ export interface Database {
           credits?: number;
           practice_days?: number;
         };
-        Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+        Update: Partial<Database['public']['Tables']['user_profiles']['Insert']>;
         Relationships: [];
       };
       creators: {
@@ -55,6 +55,7 @@ export interface Database {
           lineage: string | null;
           bio: string;
           avatar_glyph: string;
+          avatar_url: string | null;
           specialties: string[];
           pricing: Json | null;
           is_published: boolean;
@@ -79,6 +80,7 @@ export interface Database {
           subtitle: string | null;
           body: string;
           cover_glyph: string;
+          cover_url: string | null;
           is_free: boolean;
           tier_required: 'free' | 'monthly' | 'yearly';
           author_id: string | null;
@@ -91,10 +93,11 @@ export interface Database {
         };
         Insert: Omit<
           Database['public']['Tables']['articles']['Row'],
-          'id' | 'created_at' | 'updated_at' | 'view_count' | 'like_count' | 'cover_glyph'
+          'id' | 'created_at' | 'updated_at' | 'view_count' | 'like_count' | 'cover_glyph' | 'cover_url'
         > & {
           id?: string;
           cover_glyph?: string;
+          cover_url?: string | null;
           view_count?: number;
           like_count?: number;
         };
@@ -117,6 +120,7 @@ export interface Database {
           body: string;
           chapter_index: number;
           cover_glyph: string;
+          cover_url: string | null;
           is_free: boolean;
           tier_required: 'free' | 'monthly' | 'yearly';
           author_id: string | null;
@@ -128,10 +132,11 @@ export interface Database {
         };
         Insert: Omit<
           Database['public']['Tables']['novels']['Row'],
-          'id' | 'created_at' | 'updated_at' | 'view_count' | 'cover_glyph'
+          'id' | 'created_at' | 'updated_at' | 'view_count' | 'cover_glyph' | 'cover_url'
         > & {
           id?: string;
           cover_glyph?: string;
+          cover_url?: string | null;
           view_count?: number;
         };
         Update: Partial<Database['public']['Tables']['novels']['Insert']>;
@@ -172,7 +177,7 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['journal_entries']['Insert']>;
         Relationships: [];
       };
-      subscriptions: {
+      user_subscriptions: {
         Row: {
           id: string;
           user_id: string;
@@ -191,14 +196,14 @@ export interface Database {
           updated_at: string;
         };
         Insert: Omit<
-          Database['public']['Tables']['subscriptions']['Row'],
+          Database['public']['Tables']['user_subscriptions']['Row'],
           'id' | 'created_at' | 'updated_at' | 'currency' | 'started_at'
         > & {
           id?: string;
           currency?: string;
           started_at?: string;
         };
-        Update: Partial<Database['public']['Tables']['subscriptions']['Insert']>;
+        Update: Partial<Database['public']['Tables']['user_subscriptions']['Insert']>;
         Relationships: [];
       };
       bazi_readings: {
@@ -239,12 +244,14 @@ export interface Database {
           subtitle: string | null;
           body: string;
           cover_glyph: string;
+          cover_url: string | null;
           is_free: boolean;
           tier_required: 'free' | 'monthly' | 'yearly';
           author_id: string | null;
           author_name: string | null;
           author_honor: string | null;
           author_glyph: string | null;
+          author_avatar_url: string | null;
           published_at: string;
           reading_minutes: number;
           view_count: number;
@@ -259,10 +266,13 @@ export interface Database {
           subtitle: string | null;
           body: string;
           chapter_index: number;
+          cover_glyph: string;
+          cover_url: string | null;
           author_id: string | null;
           author_name: string | null;
           author_honor: string | null;
           author_glyph: string | null;
+          author_avatar_url: string | null;
           published_at: string;
           reading_minutes: number;
           view_count: number;
@@ -271,7 +281,7 @@ export interface Database {
     };
     Functions: {
       handle_new_user: { Args: never; Returns: unknown };
-      sync_profile_tier: { Args: never; Returns: unknown };
+      sync_user_profile_tier: { Args: never; Returns: unknown };
       touch_updated_at: { Args: never; Returns: unknown };
       increment_credits: { Args: { p_user_id: string; p_delta: number }; Returns: number };
     };
@@ -281,12 +291,12 @@ export interface Database {
 
 /* ============ 便捷别名 ============ */
 
-export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type Profile = Database['public']['Tables']['user_profiles']['Row'];
 export type Creator = Database['public']['Tables']['creators']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
 export type Novel = Database['public']['Tables']['novels']['Row'];
 export type JournalEntry = Database['public']['Tables']['journal_entries']['Row'];
-export type Subscription = Database['public']['Tables']['subscriptions']['Row'];
+export type Subscription = Database['public']['Tables']['user_subscriptions']['Row'];
 export type BaziReading = Database['public']['Tables']['bazi_readings']['Row'];
 
 export type UserTier = Profile['tier'];

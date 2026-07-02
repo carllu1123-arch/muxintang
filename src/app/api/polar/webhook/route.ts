@@ -6,7 +6,7 @@
  * 工作流：
  *   1. 读取 raw body（必须按原文做签名校验）
  *   2. HMAC-SHA256 验签
- *   3. 解析事件 → 落库到 subscriptions / profiles
+ *   3. 解析事件 → 落库到 user_subscriptions / user_profiles
  *   4. 返回 200 OK
  *
  * 重要：
@@ -128,7 +128,7 @@ async function handleSubscription(
 
   // 1) upsert subscription
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: subErr } = await (sb.from('subscriptions') as any)
+  const { error: subErr } = await (sb.from('user_subscriptions') as any)
     .upsert(
       {
         user_id: userId,
@@ -148,14 +148,14 @@ async function handleSubscription(
       { onConflict: 'polar_id' },
     );
   if (subErr) {
-    console.error('[webhook/polar] subscriptions upsert failed:', subErr);
-    throw new Error(`subscriptions upsert: ${(subErr as any).message}`);
+    console.error('[webhook/polar] user_subscriptions upsert failed:', subErr);
+    throw new Error(`user_subscriptions upsert: ${(subErr as any).message}`);
   }
 
-  // 2) 同步更新 profiles.tier
+  // 2) 同步更新 user_profiles.tier
   if (status === 'active') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: profErr } = await (sb.from('profiles') as any)
+    const { error: profErr } = await (sb.from('user_profiles') as any)
       .update({
         tier,
         tier_expires_at: periodEnd,
@@ -163,8 +163,8 @@ async function handleSubscription(
       })
       .eq('id', userId);
     if (profErr) {
-      console.error('[webhook/polar] profiles update failed:', profErr);
-      throw new Error(`profiles update: ${(profErr as any).message}`);
+      console.error('[webhook/polar] user_profiles update failed:', profErr);
+      throw new Error(`user_profiles update: ${(profErr as any).message}`);
     }
   }
 
@@ -181,7 +181,7 @@ async function handleSubscriptionCanceled(
   if (!userId) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: subErr } = await (sb.from('subscriptions') as any)
+  const { error: subErr } = await (sb.from('user_subscriptions') as any)
     .update({
       status: 'canceled',
       canceled_at: sub.canceled_at ?? new Date().toISOString(),
@@ -189,12 +189,12 @@ async function handleSubscriptionCanceled(
     })
     .eq('polar_id', sub.id);
   if (subErr) {
-    throw new Error(`subscriptions cancel: ${(subErr as any).message}`);
+    throw new Error(`user_subscriptions cancel: ${(subErr as any).message}`);
   }
 
   // 立刻把 profile 降回 free
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: profErr } = await (sb.from('profiles') as any)
+  const { error: profErr } = await (sb.from('user_profiles') as any)
     .update({
       tier: 'free',
       tier_expires_at: null,
@@ -202,7 +202,7 @@ async function handleSubscriptionCanceled(
     })
     .eq('id', userId);
   if (profErr) {
-    throw new Error(`profiles downgrade: ${(profErr as any).message}`);
+    throw new Error(`user_profiles downgrade: ${(profErr as any).message}`);
   }
   console.log(`[webhook/polar] subscription ${sub.id} canceled → user ${userId} → free`);
 }
@@ -231,13 +231,13 @@ async function handleOrder(
       if (error) {
         // rpc 失败时回退到读 + 写
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: cur } = await (sb.from('profiles') as any)
+        const { data: cur } = await (sb.from('user_profiles') as any)
           .select('credits')
           .eq('id', userId)
           .maybeSingle();
         const newCredits = ((cur as any)?.credits ?? 0) + credits;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (sb.from('profiles') as any)
+        await (sb.from('user_profiles') as any)
           .update({ credits: newCredits, updated_at: new Date().toISOString() })
           .eq('id', userId);
       }

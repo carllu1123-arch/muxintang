@@ -82,7 +82,7 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
 
   // 读 profile（可能尚未创建）
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profile } = await (sb.from('profiles') as any)
+  const { data: profile } = await (sb.from('user_profiles') as any)
     .select('*')
     .eq('id', user.id)
     .maybeSingle();

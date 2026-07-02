@@ -6,7 +6,7 @@
  *
  * 用途：
  *   1. 校验 webhook 签名（防伪造）
- *   2. 解析事件 → 落库到 subscriptions / profiles
+ *   2. 解析事件 → 落库到 user_subscriptions / user_profiles
  *
  * 环境变量：
  *   POLAR_WEBHOOK_SECRET   用于校验请求签名（HMAC-SHA256）

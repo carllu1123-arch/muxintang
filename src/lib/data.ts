@@ -224,7 +224,7 @@ export async function getMyProfile(userId: string): Promise<{
   try {
     const sb = createClient();
     const { data, error } = await sb
-      .from('profiles')
+      .from('user_profiles')
       .select('id, display_name, tier, tier_expires_at, credits, practice_days')
       .eq('id', userId)
       .maybeSingle();
@@ -251,12 +251,14 @@ function toArticleView(
     subtitle: a.subtitle,
     body: a.body.join('\n\n'),
     cover_glyph: '✦',
+    cover_url: null,
     is_free: true, // mock 全部免费
     tier_required: 'free',
     author_id: null,
     author_name: a.author,
     author_honor: null,
     author_glyph: '☉',
+    author_avatar_url: null,
     published_at: new Date(a.publishedAt).toISOString(),
     reading_minutes: a.readingMinutes,
     view_count: 0,
@@ -274,10 +276,13 @@ function toNovelView(
     subtitle: c.subtitle,
     body: c.body.join('\n\n'),
     chapter_index: c.number,
+    cover_glyph: '❡',
+    cover_url: null,
     author_id: null,
     author_name: '寂光阿阇梨',
     author_honor: '根本上师',
     author_glyph: '☀',
+    author_avatar_url: null,
     published_at: new Date(c.publishedAt).toISOString(),
     reading_minutes: c.readingMinutes,
     view_count: 0,

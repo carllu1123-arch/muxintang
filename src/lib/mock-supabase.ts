@@ -675,7 +675,8 @@ export const mockSupabaseClient: any = {
       };
       return q;
     }
-    if (table === 'profiles') {
+    if (table === 'user_profiles' || table === 'profiles') {
+      // profiles 作为历史别名，新代码统一用 user_profiles
       return buildProfilesQuery();
     }
     // 其他表（topics / articles / ...）：统一 chainable query builder
