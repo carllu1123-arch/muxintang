@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ARTICLES, CATEGORIES } from '@/lib/mock-data';
+import { CATEGORIES, getArticles } from '@/lib/data';
 import { PageHeader } from '@/components/PageHeader';
 
 export const metadata = {
@@ -7,7 +7,9 @@ export const metadata = {
   description: '生命格局 / 家居环境 / 姓名心解 / 阿阇梨开示',
 };
 
-export default function LearnIndex() {
+export default async function LearnIndex() {
+  const articles = await getArticles();
+
   return (
     <div className="flex flex-col gap-12 py-6 md:gap-16 md:py-12">
       <PageHeader
@@ -19,7 +21,7 @@ export default function LearnIndex() {
       {/* 四个专栏入口 */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         {CATEGORIES.map((c) => {
-          const count = ARTICLES.filter((a) => a.category === c.id).length;
+          const count = articles.filter((a) => a.category === c.id).length;
           return (
             <Link
               key={c.id}

@@ -1,4 +1,4 @@
-import { CREATORS } from '@/lib/mock-data';
+import { getCreators } from '@/lib/data';
 import { PageHeader } from '@/components/PageHeader';
 
 export const metadata = {
@@ -6,7 +6,9 @@ export const metadata = {
   description: '阿阇梨与研究员团队',
 };
 
-export default function CreatorsPage() {
+export default async function CreatorsPage() {
+  const creators = await getCreators();
+
   return (
     <div className="flex flex-col gap-10 py-6 md:gap-16 md:py-12">
       <PageHeader
@@ -16,7 +18,7 @@ export default function CreatorsPage() {
       />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-        {CREATORS.map((c) => (
+        {creators.map((c) => (
           <article
             key={c.id}
             className="flex flex-col gap-3 rounded-2xl
@@ -31,15 +33,17 @@ export default function CreatorsPage() {
                            border border-primary/40 bg-background/60
                            font-serif text-2xl text-primary"
               >
-                {c.glyph}
+                {c.avatar_glyph}
               </span>
               <div>
                 <h2 className="font-serif text-xl text-foreground md:text-2xl">
                   {c.name}
                 </h2>
-                <p className="text-xs tracking-wider text-primary/70">
-                  {c.honor} · {c.lineage}
-                </p>
+                {(c.honor || c.lineage) && (
+                  <p className="text-xs tracking-wider text-primary/70">
+                    {[c.honor, c.lineage].filter(Boolean).join(' · ')}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -47,17 +51,19 @@ export default function CreatorsPage() {
               {c.bio}
             </p>
 
-            <ul className="mt-1 flex flex-wrap gap-2">
-              {c.specialties.map((s) => (
-                <li
-                  key={s}
-                  className="rounded-full border border-primary/25 bg-background/40
-                             px-3 py-0.5 text-xs text-foreground/70"
-                >
-                  {s}
-                </li>
-              ))}
-            </ul>
+            {c.specialties.length > 0 && (
+              <ul className="mt-1 flex flex-wrap gap-2">
+                {c.specialties.map((s) => (
+                  <li
+                    key={s}
+                    className="rounded-full border border-primary/25 bg-background/40
+                               px-3 py-0.5 text-xs text-foreground/70"
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
           </article>
         ))}
       </section>

@@ -52,16 +52,6 @@ function blobToDataURL(blob: Blob): Promise<string> {
   });
 }
 
-/** dataURL → blob */
-function dataURLToBlob(dataURL: string): Blob {
-  const [head, b64] = dataURL.split(',');
-  const mime = /data:(.*?);/.exec(head)?.[1] || 'audio/mpeg';
-  const bin = atob(b64);
-  const arr = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-  return new Blob([arr], { type: mime });
-}
-
 function readCache(key: string): string | null {
   try {
     return localStorage.getItem(CACHE_PREFIX + key);
@@ -117,6 +107,51 @@ export function useTTS(): UseTTSReturn {
   const seqRef = useRef(0);
   // 当前正在播的 hash key
   const playingKeyRef = useRef<string | null>(null);
+  // 播放函数 ref（用 useEffect 写入，避免 render 期间写 ref）
+  const playFromDataURLRef = useRef<
+    (dataURL: string, mySeq: number, key: string) => Promise<void>
+  >(async () => {});
+
+  // 播放函数：在 useEffect 中把当前版本写入 ref，给 speak 调用
+  // （不用 ref 重赋值写法，避免 react-hooks/refs 报"render 期间写 ref"）
+  useEffect(() => {
+    playFromDataURLRef.current = async (dataURL, mySeq, key) => {
+      const a = getAudio();
+      if (mySeq !== seqRef.current) return;
+
+      playingKeyRef.current = key;
+      a.src = dataURL;
+      a.currentTime = 0;
+
+      a.onended = () => {
+        if (mySeq !== seqRef.current) return;
+        setIsSpeaking(false);
+        setIsLoading(false);
+      };
+      a.onerror = () => {
+        if (mySeq !== seqRef.current) return;
+        setIsSpeaking(false);
+        setIsLoading(false);
+        setError('音频播放失败');
+      };
+
+      try {
+        await a.play();
+        if (mySeq !== seqRef.current) {
+          a.pause();
+          return;
+        }
+        setIsSpeaking(true);
+        setIsLoading(false);
+      } catch (e: any) {
+        if (mySeq !== seqRef.current) return;
+        // Autoplay policy 阻止 / 资源错误
+        setIsSpeaking(false);
+        setIsLoading(false);
+        setError(e?.message || '播放失败');
+      }
+    };
+  });
 
   const stop = useCallback(() => {
     seqRef.current++; // 让在飞的 fetch 失效
@@ -150,7 +185,7 @@ export function useTTS(): UseTTSReturn {
       // 2. 命中缓存 → 直接放 dataURL
       const cached = readCache(key);
       if (cached) {
-        await playFromDataURL(cached, mySeq, key);
+        await playFromDataURLRef.current(cached, mySeq, key);
         return;
       }
 
@@ -175,7 +210,7 @@ export function useTTS(): UseTTSReturn {
       const dataURL = await blobToDataURL(blob);
       writeCache(key, dataURL);
 
-      await playFromDataURL(dataURL, mySeq, key);
+      await playFromDataURLRef.current(dataURL, mySeq, key);
     } catch (e: any) {
       if (mySeq !== seqRef.current) return;
       setError(e?.message || 'TTS 播放失败');
@@ -197,47 +232,6 @@ export function useTTS(): UseTTSReturn {
       }
     };
   }, []);
-
-  async function playFromDataURL(
-    dataURL: string,
-    mySeq: number,
-    key: string,
-  ) {
-    const a = getAudio();
-    if (mySeq !== seqRef.current) return;
-
-    playingKeyRef.current = key;
-    a.src = dataURL;
-    a.currentTime = 0;
-
-    a.onended = () => {
-      if (mySeq !== seqRef.current) return;
-      setIsSpeaking(false);
-      setIsLoading(false);
-    };
-    a.onerror = () => {
-      if (mySeq !== seqRef.current) return;
-      setIsSpeaking(false);
-      setIsLoading(false);
-      setError('音频播放失败');
-    };
-
-    try {
-      await a.play();
-      if (mySeq !== seqRef.current) {
-        a.pause();
-        return;
-      }
-      setIsSpeaking(true);
-      setIsLoading(false);
-    } catch (e: any) {
-      if (mySeq !== seqRef.current) return;
-      // Autoplay policy 阻止 / 资源错误
-      setIsSpeaking(false);
-      setIsLoading(false);
-      setError(e?.message || '播放失败');
-    }
-  }
 
   return { speak, stop, isSpeaking, isLoading, error };
 }

@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { CHAPTERS, findChapter } from '@/lib/mock-data';
+import { getAllChapterPaths, getChapter, getChapters } from '@/lib/data';
 import { PageHeader } from '@/components/PageHeader';
 
-export function generateStaticParams() {
-  return CHAPTERS.map((c) => ({ slug: c.slug }));
+export async function generateStaticParams() {
+  return getAllChapterPaths();
 }
 
 export async function generateMetadata({
@@ -13,10 +13,14 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const ch = findChapter(slug);
+  const ch = await getChapter(slug);
   return {
     title: ch ? `${ch.title} · 牧心堂` : '未找到 · 牧心堂',
   };
+}
+
+function splitBody(body: string): string[] {
+  return body.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
 }
 
 export default async function ChapterPage({
@@ -25,30 +29,33 @@ export default async function ChapterPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const ch = findChapter(slug);
+  const [ch, all] = await Promise.all([getChapter(slug), getChapters()]);
   if (!ch) notFound();
 
-  const idx = CHAPTERS.findIndex((c) => c.slug === slug);
-  const prev = idx > 0 ? CHAPTERS[idx - 1] : null;
-  const next = idx < CHAPTERS.length - 1 ? CHAPTERS[idx + 1] : null;
+  const idx = all.findIndex((c) => c.slug === slug);
+  const prev = idx > 0 ? all[idx - 1] : null;
+  const next = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
+  const paragraphs = splitBody(ch.body);
 
   return (
     <article className="flex flex-col gap-10 py-6 md:gap-16 md:py-12">
       <PageHeader
-        eyebrow={`CHAPTER · ${ch.number}`}
+        eyebrow={`CHAPTER · ${ch.chapter_index}`}
         title={ch.title}
-        subtitle={ch.subtitle}
+        subtitle={ch.subtitle ?? undefined}
         back={{ href: '/library', label: '行者文丛' }}
       />
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs tracking-wider text-foreground/50">
-        <span>发布：{ch.publishedAt}</span>
+        {ch.author_name && <span>作者：{ch.author_name}</span>}
+        {ch.author_name && <span aria-hidden>·</span>}
+        <span>发布：{new Date(ch.published_at).toLocaleDateString('zh-CN')}</span>
         <span aria-hidden>·</span>
-        <span>阅读：{ch.readingMinutes} 分钟</span>
+        <span>阅读：{ch.reading_minutes} 分钟</span>
       </div>
 
       <div className="flex flex-col gap-5 md:gap-6">
-        {ch.body.map((p, i) => (
+        {paragraphs.map((p, i) => (
           <p
             key={i}
             className="text-base leading-loose text-foreground/85 md:text-lg
@@ -62,7 +69,6 @@ export default async function ChapterPage({
         ))}
       </div>
 
-      {/* 翻页 */}
       <nav className="flex items-center justify-between gap-4 border-t border-primary/15 pt-6">
         {prev ? (
           <Link

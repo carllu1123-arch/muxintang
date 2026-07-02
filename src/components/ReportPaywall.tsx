@@ -1,0 +1,111 @@
+import Link from 'next/link';
+
+interface ReportPaywallProps {
+  tierRequired: 'monthly' | 'yearly';
+  categoryTitle: string;
+  remainingParagraphs?: number; // 可选：剩余未读段落数
+}
+
+/**
+ * 牧心堂 · 深度报告付费墙
+ *
+ * 用法：
+ *   {isLocked && <ReportPaywall tierRequired="monthly" categoryTitle="生命格局" />}
+ *
+ * 设计：
+ * - 渐变遮罩 + 卡片 + CTA 按钮
+ * - 移动优先；PC 端文字更舒展
+ * - 暂不读用户订阅状态，按"未付费"展示（订阅状态接入后会动态切换）
+ */
+export function ReportPaywall({
+  tierRequired,
+  categoryTitle,
+  remainingParagraphs,
+}: ReportPaywallProps) {
+  const tierName = tierRequired === 'monthly' ? '月度会员' : '年度会员';
+  const tierPrice = tierRequired === 'monthly' ? '¥38/月' : '¥388/年';
+  const tierHighlight =
+    tierRequired === 'yearly' ? '推荐 · 一年只需 ¥388，相当于 10 个月' : '';
+
+  return (
+    <section
+      className="relative -mt-32 overflow-hidden rounded-2xl
+                 border border-primary/30
+                 bg-gradient-to-b from-transparent via-background/80 to-background
+                 pt-32 backdrop-blur-md"
+      aria-label="付费内容"
+    >
+      <div className="flex flex-col items-center gap-6 p-6 text-center md:gap-8 md:p-10">
+        {/* 装饰 */}
+        <span aria-hidden className="font-serif text-5xl text-primary md:text-6xl">
+          ☷
+        </span>
+
+        <header>
+          <h3 className="font-serif text-2xl text-foreground md:text-3xl">
+            续读「{categoryTitle}」深度报告
+          </h3>
+          {remainingParagraphs !== undefined && (
+            <p className="mt-2 text-sm text-foreground/60 md:text-base">
+              下方还有 {remainingParagraphs} 段属于
+              <span className="text-accent"> {tierName} </span>
+              内容
+            </p>
+          )}
+        </header>
+
+        {/* 权益列表 */}
+        <ul className="flex flex-col gap-2 text-left text-sm text-foreground/80 md:text-base">
+          <li className="flex items-start gap-2">
+            <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+            完整解锁当前文章及所有同类深度报告
+          </li>
+          <li className="flex items-start gap-2">
+            <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+            阿阇梨在线答疑（年度会员 4 次/月）
+          </li>
+          <li className="flex items-start gap-2">
+            <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+            灵性研学社区发帖 + 修行打卡
+          </li>
+        </ul>
+
+        {/* 定价 */}
+        <div className="flex flex-col items-center gap-1">
+          <div className="flex items-baseline gap-1">
+            <span className="font-serif text-3xl text-primary md:text-4xl">
+              {tierPrice}
+            </span>
+          </div>
+          {tierHighlight && (
+            <p className="text-xs text-accent">{tierHighlight}</p>
+          )}
+        </div>
+
+        {/* CTA */}
+        <div className="flex w-full max-w-sm flex-col gap-3">
+          <Link
+            href="/pricing"
+            className="rounded-lg bg-primary px-6 py-3 text-center
+                       font-serif text-base text-background transition
+                       hover:bg-primary/90"
+          >
+            立即开通
+          </Link>
+          <Link
+            href="/login"
+            className="rounded-lg border border-primary/30 px-6 py-3 text-center
+                       text-sm text-foreground/80 transition
+                       hover:border-primary hover:text-primary"
+          >
+            已是会员？登录
+          </Link>
+        </div>
+
+        <p className="text-[10px] tracking-wider text-foreground/40">
+          · 随时取消 · 7 天无理由退款 ·
+        </p>
+      </div>
+    </section>
+  );
+}

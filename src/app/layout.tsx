@@ -23,14 +23,6 @@ const PC_NAV = [
   { label: "吉祥馆", href: "/shop" },
 ];
 
-const MOBILE_TABS = [
-  { label: "首页", href: "/", icon: "⌂" },
-  { label: "四学", href: "/learn", icon: "✦" },
-  { label: "文丛", href: "/library", icon: "❡" },
-  { label: "研习", href: "/study", icon: "◈" },
-  { label: "我的", href: "/me", icon: "☯" },
-];
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {

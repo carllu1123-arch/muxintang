@@ -1,4 +1,4 @@
-import { JOURNAL_ENTRIES } from '@/lib/mock-data';
+import { getJournalEntries } from '@/lib/data';
 import { PageHeader } from '@/components/PageHeader';
 
 export const metadata = {
@@ -13,7 +13,9 @@ const TYPE_STYLES: Record<string, string> = {
   分享: 'border-primary/30 text-primary/80 bg-primary/5',
 };
 
-export default function StudyPage() {
+export default async function StudyPage() {
+  const entries = await getJournalEntries();
+
   return (
     <div className="flex flex-col gap-10 py-6 md:gap-16 md:py-12">
       <PageHeader
@@ -23,7 +25,7 @@ export default function StudyPage() {
       />
 
       <section className="flex flex-col gap-4">
-        {JOURNAL_ENTRIES.map((e) => (
+        {entries.map((e) => (
           <article
             key={e.id}
             className="rounded-2xl border border-border bg-muted/40 p-5
@@ -33,7 +35,7 @@ export default function StudyPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="font-serif text-base text-foreground md:text-lg">
-                  {e.author}
+                  {e.author_name}
                 </span>
                 <span
                   className={`rounded-full border px-2 py-0.5 text-[10px] tracking-wider
@@ -43,7 +45,7 @@ export default function StudyPage() {
                 </span>
               </div>
               <span className="text-[10px] text-foreground/40">
-                {e.publishedAt}
+                {new Date(e.published_at).toLocaleDateString('zh-CN')}
               </span>
             </div>
 
@@ -55,8 +57,8 @@ export default function StudyPage() {
             </p>
 
             <div className="mt-4 flex items-center gap-4 text-xs text-foreground/50">
-              <span>♥ {e.likes}</span>
-              <span>💬 {e.comments}</span>
+              <span>♥ {e.like_count}</span>
+              <span>💬 {e.comment_count}</span>
             </div>
           </article>
         ))}

@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import { isMockSupabaseEnabled, mockSupabaseClient } from './mock-supabase';
 
@@ -126,9 +126,8 @@ export function createClient() {
 
 export function isSupabaseConfigured(): boolean {
   // mock 模式视为「已配置」，让上层逻辑走完持久化流程
-  if (typeof window !== 'undefined') {
-    const { isMockSupabaseEnabled } = require('./mock-supabase') as typeof import('./mock-supabase');
-    if (isMockSupabaseEnabled()) return true;
+  if (typeof window !== 'undefined' && isMockSupabaseEnabled()) {
+    return true;
   }
   return Boolean(getSupabaseUrl() && getSupabaseAnonKey());
 }
