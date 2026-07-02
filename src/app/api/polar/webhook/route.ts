@@ -207,7 +207,7 @@ async function handleSubscriptionCanceled(
   console.log(`[webhook/polar] subscription ${sub.id} canceled → user ${userId} → free`);
 }
 
-/* ============ 订单处理（一次性购买，如单本文丛） ============ */
+/* ============ 订单处理（一次性购买，如单本故事） ============ */
 
 async function handleOrder(
   sb: ReturnType<typeof createServerClient>,

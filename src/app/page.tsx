@@ -10,13 +10,13 @@ const TOOLS = [
   {
     title: "生命代码",
     desc: "出生 · 看见你的本然频率",
-    href: "/tools/lifecode",
+    href: "/tools/bazi",
     glyph: "☷",
   },
   {
     title: "家居环境",
     desc: "户型 · 调和人居与气场",
-    href: "/tools/house",
+    href: "/tools/habitat",
     glyph: "◉",
   },
   {
@@ -28,7 +28,7 @@ const TOOLS = [
 ] as const;
 
 /**
- * 四大学修专栏
+ * 密解专栏
  */
 const COLUMNS = [
   {
@@ -181,14 +181,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== 四大学修专栏 ===== */}
+      {/* ===== 密解专栏 ===== */}
       <section>
         <header className="mb-6 flex items-baseline justify-between md:mb-8">
           <h2
             className="font-serif text-2xl tracking-wider text-foreground
                        md:text-4xl"
           >
-            四大学修
+            密解专栏
           </h2>
           <Link
             href="/learn"
@@ -225,6 +225,67 @@ export default function HomePage() {
             </Link>
           ))}
         </div>
+      </section>
+
+      {/* ===== 吉祥馆入口 ===== */}
+      <section>
+        <header className="mb-6 flex items-baseline justify-between md:mb-8">
+          <h2
+            className="font-serif text-2xl tracking-wider text-foreground
+                       md:text-4xl"
+          >
+            吉祥馆
+          </h2>
+          <Link
+            href="/auspicious"
+            className="text-xs tracking-wider text-primary/80 transition hover:text-primary md:text-sm"
+          >
+            进入 ›
+          </Link>
+        </header>
+
+        <Link
+          href="/auspicious"
+          className="group relative flex flex-col gap-3 overflow-hidden
+                     rounded-2xl border border-primary/30
+                     bg-gradient-to-br from-primary/10 via-transparent to-transparent
+                     p-6 backdrop-blur-md transition
+                     hover:border-primary hover:shadow-[0_0_60px_-25px_rgba(212,175,55,0.5)]
+                     md:flex-row md:items-center md:gap-6 md:p-8"
+        >
+          {/* 装饰：右上角朱砂光晕 */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-8 -top-8
+                       h-32 w-32 rounded-full bg-accent/20 blur-3xl"
+          />
+          <span
+            aria-hidden
+            className="grid h-14 w-14 shrink-0 place-items-center rounded-full
+                       border border-primary/40 bg-background/60
+                       font-serif text-2xl text-primary md:h-16 md:w-16 md:text-3xl"
+          >
+            ☯
+          </span>
+          <div className="flex-1">
+            <p className="text-[10px] tracking-[0.3em] text-primary/60">
+              AUSPICIOUS · 结善缘 · 养心性
+            </p>
+            <h3 className="mt-1 font-serif text-lg text-foreground md:text-xl">
+              数字壁纸 · 阿阇梨定制 · 法本流通
+            </h3>
+            <p className="mt-1 text-xs leading-relaxed text-foreground/60 md:text-sm">
+              AI 即时生成曼荼罗壁纸，阿阇梨定制请奉，经书免费结缘。
+            </p>
+          </div>
+          <span
+            aria-hidden
+            className="text-foreground/30 transition group-hover:text-primary
+                       md:self-end"
+          >
+            →
+          </span>
+        </Link>
       </section>
     </div>
   );

@@ -1,5 +1,3 @@
-'use client';
-
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import { isMockSupabaseEnabled, mockSupabaseClient } from './mock-supabase';

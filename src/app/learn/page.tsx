@@ -3,7 +3,7 @@ import { CATEGORIES, getArticles } from '@/lib/data';
 import { PageHeader } from '@/components/PageHeader';
 
 export const metadata = {
-  title: '四大学修 · 牧心堂',
+  title: '密解专栏 · 牧心堂',
   description: '生命格局 / 家居环境 / 姓名心解 / 阿阇梨开示',
 };
 
@@ -14,8 +14,8 @@ export default async function LearnIndex() {
     <div className="flex flex-col gap-12 py-6 md:gap-16 md:py-12">
       <PageHeader
         eyebrow="LEARN"
-        title="四大学修"
-        subtitle="识自己 · 调环境 · 解名字 · 听法语"
+        title="密解专栏"
+        subtitle="显真言 · 合五行 · 破无明"
       />
 
       {/* 四个专栏入口 */}

@@ -44,3 +44,43 @@ body {
 nextjs-portal {
   display: none !important;
 }
+
+/* ============ BaziModal 弹窗动画 ============ */
+@keyframes bazi-modal-fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bazi-modal-popin {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.bazi-modal-overlay {
+  animation: bazi-modal-fadein 0.2s ease-out;
+}
+
+.bazi-modal-body {
+  animation: bazi-modal-popin 0.25s ease-out;
+}
+
+/* ============ 沉浸式阅读模式 ============
+ * 由 ChapterReader 在进入沉浸式时给 <body> 加 .immersive-mode
+ * 隐藏全局顶部 Navbar + 底部 MobileBottomNav，让正文独占视口
+ */
+body.immersive-mode header {
+  display: none !important;
+}
+body.immersive-mode nav[aria-label="主导航"] {
+  display: none !important;
+}

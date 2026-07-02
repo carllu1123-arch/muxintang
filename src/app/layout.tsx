@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { SearchPortal } from "@/components/SearchPortal";
+import { PointsBadge } from "@/components/PointsBadge";
 
 export const metadata: Metadata = {
   title: "牧心堂 · 灵性修学与生命智测",
@@ -17,10 +19,11 @@ export const viewport: Viewport = {
 
 const PC_NAV = [
   { label: "智测工具", href: "/tools" },
-  { label: "四学专栏", href: "/learn" },
-  { label: "行者文丛", href: "/library" },
+  { label: "密解专栏", href: "/learn" },
+  { label: "行者故事", href: "/library" },
   { label: "灵性研学", href: "/study" },
-  { label: "吉祥馆", href: "/shop" },
+  { label: "吉祥馆", href: "/auspicious" },
+  { label: "关于", href: "/about" },
 ];
 
 export default function RootLayout({
@@ -80,6 +83,12 @@ export default function RootLayout({
                     </Link>
                   </li>
                 ))}
+                <li>
+                  <SearchPortal variant="pc" />
+                </li>
+                <li>
+                  <PointsBadge variant="pc" />
+                </li>
                 <li>
                   <Link
                     href="/login"

@@ -286,5 +286,6 @@ function toNovelView(
     published_at: new Date(c.publishedAt).toISOString(),
     reading_minutes: c.readingMinutes,
     view_count: 0,
+    story_type: c.storyType,
   };
 }

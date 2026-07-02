@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { PageHeader } from '@/components/PageHeader';
+import { MorningVoice } from '@/components/MorningVoice';
+import { DailyPracticeCard } from '@/components/DailyPracticeCard';
 import { getCurrentSession } from '@/lib/session';
 import { isSupabaseAuthConfigured } from '@/lib/session';
 
@@ -158,6 +160,12 @@ export default async function MePage() {
           </div>
         ))}
       </section>
+
+      {/* 每日晨音（仅登录用户可见） */}
+      <MorningVoice displayName={session.displayName} />
+
+      {/* 今日修行日课卡（晨音 + 画册 = "今日精进" 徽章） */}
+      <DailyPracticeCard />
 
       {/* 订阅详情 */}
       {isPaid && (

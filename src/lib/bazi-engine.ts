@@ -154,7 +154,10 @@ export function calculateBazi(input: BaziInput): BaziOutput {
   // 7. 农历日期、生肖、节气、纳音
   const lunarDate = `${lunar.getYearInChinese()}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}`;
   const zodiac = lunar.getYearShengXiao();
-  const solarTerm = solar.getJieQi() || '无节气';
+  // lunar-javascript 1.7+：getJieQi 在 Lunar 对象上，Solar 上不存在
+  // 包内未带 .d.ts，此处用 unknown 收紧后取
+  const solarTerm =
+    (lunar as unknown as { getJieQi?: () => string }).getJieQi?.() || '无节气';
   const nayin = lunar.getDayNaYin(); // 日柱纳音
 
   return {

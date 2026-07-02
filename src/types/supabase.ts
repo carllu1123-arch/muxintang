@@ -30,6 +30,15 @@ export interface Database {
           tier_expires_at: string | null;
           credits: number;
           practice_days: number;
+          birth_date: string | null;
+          birth_hour: number | null;
+          gender: '男' | '女' | null;
+          /** 用户角色：reader=普通读者 / acharya=阿阇梨 / admin=管理员 */
+          role: 'reader' | 'acharya' | 'admin';
+          /** 当月壁纸免费额度所属月份（'YYYY-MM'），null 表示从未用过 */
+          wallpaper_month: string | null;
+          /** 当月已用免费壁纸次数 */
+          wallpaper_used: number;
           created_at: string;
           updated_at: string;
         };
@@ -42,6 +51,12 @@ export interface Database {
           tier_expires_at?: string | null;
           credits?: number;
           practice_days?: number;
+          birth_date?: string | null;
+          birth_hour?: number | null;
+          gender?: '男' | '女' | null;
+          role?: 'reader' | 'acharya' | 'admin';
+          wallpaper_month?: string | null;
+          wallpaper_used?: number;
         };
         Update: Partial<Database['public']['Tables']['user_profiles']['Insert']>;
         Relationships: [];
@@ -233,6 +248,61 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['bazi_readings']['Insert']>;
         Relationships: [];
       };
+      calendar_dates: {
+        Row: {
+          id: number;
+          date: string;
+          lunar_day: string | null;
+          ganzhi_day: string | null;
+          clash: string | null;
+          xing: '金' | '木' | '水' | '火' | '土' | null;
+          suitable: string[];
+          unsuitable: string[];
+          hours: Json;
+          source: string;
+          note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<
+          Database['public']['Tables']['calendar_dates']['Row'],
+          'id' | 'created_at' | 'updated_at' | 'suitable' | 'unsuitable' | 'hours' | 'source'
+        > & {
+          id?: number;
+          suitable?: string[];
+          unsuitable?: string[];
+          hours?: Json;
+          source?: string;
+        };
+        Update: Partial<Database['public']['Tables']['calendar_dates']['Insert']>;
+        Relationships: [];
+      };
+      auspicious_orders: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          product_type: 'scroll' | 'bracelet' | 'sachet';
+          recipient: string;
+          address: string;
+          blessing_message: string | null;
+          status: 'pending' | 'blessed' | 'shipped' | 'completed' | 'cancelled';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          product_type: 'scroll' | 'bracelet' | 'sachet';
+          recipient: string;
+          address: string;
+          blessing_message?: string | null;
+          status?: 'pending' | 'blessed' | 'shipped' | 'completed' | 'cancelled';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['auspicious_orders']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: {
       v_articles_with_author: {
@@ -276,6 +346,8 @@ export interface Database {
           published_at: string;
           reading_minutes: number;
           view_count: number;
+          /** 故事类型：serial=长篇连载 / short=短篇精选 */
+          story_type: 'serial' | 'short';
         };
       };
     };
@@ -298,6 +370,7 @@ export type Novel = Database['public']['Tables']['novels']['Row'];
 export type JournalEntry = Database['public']['Tables']['journal_entries']['Row'];
 export type Subscription = Database['public']['Tables']['user_subscriptions']['Row'];
 export type BaziReading = Database['public']['Tables']['bazi_readings']['Row'];
+export type AuspiciousOrder = Database['public']['Tables']['auspicious_orders']['Row'];
 
 export type UserTier = Profile['tier'];
 export type LearnCategory = Article['category'];

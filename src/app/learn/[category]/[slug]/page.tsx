@@ -8,7 +8,9 @@ import {
 } from '@/lib/data';
 import { PageHeader } from '@/components/PageHeader';
 import { ReportPaywall } from '@/components/ReportPaywall';
+import { ArticleTTS } from '@/components/ArticleTTS';
 import { getCurrentSession, canAccess } from '@/lib/session';
+import { getRelatedTools } from '@/lib/related-tools';
 
 /* ============ 静态预渲染所有 (category, slug) 组合 ============ */
 export async function generateStaticParams() {
@@ -63,6 +65,9 @@ export default async function ArticlePage({
   const locked = paragraphs.slice(previewCount);
   const isLocked = !article.is_free && locked.length > 0 && !userHasAccess;
 
+  // 反向推荐：根据文章 category 推荐相关智测工具（学 → 测 闭环）
+  const relatedTools = getRelatedTools(category);
+
   return (
     <article className="flex flex-col gap-10 py-6 md:gap-16 md:py-12">
       <PageHeader
@@ -96,6 +101,9 @@ export default async function ArticlePage({
           </>
         )}
       </div>
+
+      {/* 阿阇梨朗读（TTS） */}
+      <ArticleTTS title={article.title} body={article.body} />
 
       {/* 正文预览 */}
       <div className="flex flex-col gap-5 md:gap-6">
@@ -133,6 +141,73 @@ export default async function ArticlePage({
             </p>
           ))}
         </div>
+      )}
+
+      {/* ============ 反向推荐：文章 → 智测工具（学 ⇄ 测 闭环） ============ */}
+      {relatedTools.length > 0 && (
+        <section
+          aria-label="推荐智测工具"
+          className="rounded-2xl border border-primary/30
+                     bg-gradient-to-br from-primary/5 via-transparent to-transparent
+                     p-5 backdrop-blur-md md:p-6"
+        >
+          <header className="mb-4 flex items-start gap-3">
+            <span
+              aria-hidden
+              className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full
+                         border border-primary/40 bg-background/60
+                         font-serif text-base text-primary"
+            >
+              ☯
+            </span>
+            <div className="flex-1">
+              <p className="font-serif text-sm text-foreground md:text-base">
+                阅读完这篇文章，不妨到
+                <span className="text-primary">【智测工具】</span>
+                实际测一下您的格局。
+              </p>
+              <p className="mt-1 text-[10px] tracking-[0.2em] text-foreground/40">
+                LEARN → TOOLS · 学以致用
+              </p>
+            </div>
+          </header>
+
+          <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {relatedTools.map((t) => (
+              <li key={t.href}>
+                <Link
+                  href={t.href}
+                  className="group flex items-center gap-3 rounded-xl
+                             border border-primary/20 bg-black/40 p-4
+                             transition hover:border-primary/60 hover:bg-primary/5"
+                >
+                  <span
+                    aria-hidden
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-lg
+                               border border-primary/40 bg-background/60
+                               font-serif text-lg text-primary"
+                  >
+                    {t.glyph}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-serif text-sm text-foreground transition group-hover:text-primary md:text-base">
+                      {t.title}
+                    </p>
+                    <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-foreground/60">
+                      {t.desc}
+                    </p>
+                  </div>
+                  <span
+                    aria-hidden
+                    className="text-foreground/30 transition group-hover:text-primary"
+                  >
+                    →
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* 分割线 */}

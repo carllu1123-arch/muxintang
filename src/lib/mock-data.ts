@@ -53,7 +53,7 @@ export const CATEGORIES: CategoryMeta[] = [
   },
 ];
 
-/* ============ 四学文章 ============ */
+/* ============ 密解文章 ============ */
 
 export interface Article {
   category: LearnCategory;
@@ -189,7 +189,7 @@ export const ARTICLES: Article[] = [
   },
 ];
 
-/* ============ 行者文丛（小说章节） ============ */
+/* ============ 行者故事（小说章节） ============ */
 
 export interface Chapter {
   slug: string;
@@ -199,6 +199,8 @@ export interface Chapter {
   publishedAt: string;
   readingMinutes: number;
   body: string[];
+  /** 故事类型：serial=长篇连载 / short=短篇精选 */
+  storyType: 'serial' | 'short';
 }
 
 export const CHAPTERS: Chapter[] = [
@@ -209,6 +211,7 @@ export const CHAPTERS: Chapter[] = [
     subtitle: '一声钟响，他回头',
     publishedAt: '2026-03-01',
     readingMinutes: 14,
+    storyType: 'serial',
     body: [
       '那年深秋，他 28 岁。',
       '从城里回来，山路转了 108 道弯，每一道弯都把他转得更轻一些。',
@@ -223,6 +226,7 @@ export const CHAPTERS: Chapter[] = [
     subtitle: '师父说：你听见的是自己',
     publishedAt: '2026-03-20',
     readingMinutes: 12,
+    storyType: 'serial',
     body: [
       '师父没教他什么。',
       '只是每天拂晓敲钟，黄昏敲钟。',
@@ -237,12 +241,62 @@ export const CHAPTERS: Chapter[] = [
     subtitle: '每一个影子都是自己的一部分',
     publishedAt: '2026-04-15',
     readingMinutes: 16,
+    storyType: 'serial',
     body: [
       '他开始看见自己的影子。',
       '不是墙上的那种——是心里的那种。',
       '每一个不耐烦的念头，每一份说不出口的委屈，都是影子。',
       '师父说：不要赶走影子，陪着它走一段。',
       '走着走着，影子就变成了光。',
+    ],
+  },
+  /* ============ 短篇精选 ============ */
+  {
+    slug: 'short-moon-tea',
+    number: 0,
+    title: '月下茶',
+    subtitle: '一个人喝的茶，才喝得出味道',
+    publishedAt: '2026-05-01',
+    readingMinutes: 5,
+    storyType: 'short',
+    body: [
+      '月光落在茶汤里，像一块旧银币。',
+      '他端起杯子，没有喝，只是看着。',
+      '师父曾说：茶有三次——第一次解渴，第二次品味，第三次忘我。',
+      '他喝到第三口时，忘了自己在喝茶。',
+      '只剩月光，只剩茶，只剩夜。',
+    ],
+  },
+  {
+    slug: 'short-empty-boat',
+    number: 0,
+    title: '空船',
+    subtitle: '若无人舟，谁来渡河',
+    publishedAt: '2026-05-20',
+    readingMinutes: 4,
+    storyType: 'short',
+    body: [
+      '河上有条船，没有船夫。',
+      '他等了一个时辰，无人来渡。',
+      '后来他想通了——自己上船，自己撑篙，自己靠岸。',
+      '到了对岸回头看，船还在原地。',
+      '原来渡他的，从来不是船。',
+    ],
+  },
+  {
+    slug: 'short-road-home',
+    number: 0,
+    title: '回家的路',
+    subtitle: '最远的路，是回到心里',
+    publishedAt: '2026-06-01',
+    readingMinutes: 6,
+    storyType: 'short',
+    body: [
+      '他在城里住了十年，以为家在远方。',
+      '每年回去一次，母亲都老一点。',
+      '后来母亲走了，他才发现——回家的路，不是通往某个地方。',
+      '是通往某个再也见不到的人。',
+      '他坐了很久。然后起身，把门关好。',
     ],
   },
 ];
@@ -405,7 +459,7 @@ export const PLANS: MembershipPlan[] = [
     period: '月',
     highlight: false,
     benefits: [
-      '全部四学专栏 + 文丛',
+      '全部密解专栏 + 故事',
       '无限次智测工具',
       '社区发帖 + 修行打卡',
       '每月 1 次阿阇梨在线答疑',

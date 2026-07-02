@@ -3,6 +3,11 @@ import Link from 'next/link';
 interface ReportPaywallProps {
   tierRequired: 'monthly' | 'yearly';
   categoryTitle: string;
+  /**
+   * 自定义描述文案（如"前 3 句为 AI 预览，阿阇梨完整情感开示与修行建议，
+   * 请订阅【年度会员】后查看。"）。不传则显示默认的"剩余段落数"提示。
+   */
+  description?: string;
   remainingParagraphs?: number; // 可选：剩余未读段落数
 }
 
@@ -20,6 +25,7 @@ interface ReportPaywallProps {
 export function ReportPaywall({
   tierRequired,
   categoryTitle,
+  description,
   remainingParagraphs,
 }: ReportPaywallProps) {
   const tierName = tierRequired === 'monthly' ? '月度会员' : '年度会员';
@@ -45,12 +51,18 @@ export function ReportPaywall({
           <h3 className="font-serif text-2xl text-foreground md:text-3xl">
             续读「{categoryTitle}」深度报告
           </h3>
-          {remainingParagraphs !== undefined && (
-            <p className="mt-2 text-sm text-foreground/60 md:text-base">
-              下方还有 {remainingParagraphs} 段属于
-              <span className="text-accent"> {tierName} </span>
-              内容
+          {description ? (
+            <p className="mt-3 text-sm leading-relaxed text-foreground/80 md:text-base">
+              {description}
             </p>
+          ) : (
+            remainingParagraphs !== undefined && (
+              <p className="mt-2 text-sm text-foreground/60 md:text-base">
+                下方还有 {remainingParagraphs} 段属于
+                <span className="text-accent"> {tierName} </span>
+                内容
+              </p>
+            )
           )}
         </header>
 

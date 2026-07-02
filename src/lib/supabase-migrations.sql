@@ -44,10 +44,32 @@ create table if not exists public.user_profiles (
   credits         integer not null default 0 check (credits >= 0),
   practice_days   integer not null default 0 check (practice_days >= 0),
 
+  -- 用户生辰（生命代码/情缘合盘互通用）
+  birth_date      date,
+  birth_hour      integer check (birth_hour is null or (birth_hour between 0 and 23)),
+  gender          text check (gender is null or gender in ('男', '女')),
+
   -- 时间戳
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );
+
+-- 向后兼容：老库升级时补齐生辰字段（IF NOT EXISTS 仅 9.6+ 支持，用 information_schema 兜底）
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'user_profiles' and column_name = 'birth_date') then
+    alter table public.user_profiles add column birth_date date;
+  end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'user_profiles' and column_name = 'birth_hour') then
+    alter table public.user_profiles add column birth_hour integer;
+  end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'user_profiles' and column_name = 'gender') then
+    alter table public.user_profiles add column gender text;
+  end if;
+end $$;
 
 create index if not exists idx_user_profiles_tier on public.user_profiles(tier);
 
@@ -98,7 +120,7 @@ create index if not exists idx_creators_published on public.creators(is_publishe
 comment on table public.creators is '创作者档案（阿阇梨 / 居士 / 研究员）';
 
 -- =====================================================
--- 3. articles · 四学专栏文章
+-- 3. articles · 密解专栏文章
 -- =====================================================
 create table if not exists public.articles (
   id              uuid primary key default uuid_generate_v4(),
@@ -134,10 +156,10 @@ create index if not exists idx_articles_search on public.articles
   using gin (to_tsvector('simple',
     coalesce(title, '') || ' ' || coalesce(subtitle, '') || ' ' || coalesce(body, '')));
 
-comment on table public.articles is '四学专栏文章（lifecode / habitat / name / teacher）';
+comment on table public.articles is '密解专栏文章（lifecode / habitat / name / teacher）';
 
 -- =====================================================
--- 4. novels · 文丛（小说章节）
+-- 4. novels · 行者故事（小说章节）
 -- =====================================================
 create table if not exists public.novels (
   id              uuid primary key default uuid_generate_v4(),
@@ -162,7 +184,7 @@ create table if not exists public.novels (
 create index if not exists idx_novels_chapter   on public.novels(chapter_index);
 create index if not exists idx_novels_published on public.novels(published_at desc);
 
-comment on table public.novels is '行者文丛·小说章节';
+comment on table public.novels is '行者故事·小说章节';
 
 -- =====================================================
 -- 5. user_subscriptions · 订阅记录（来自 Polar webhook）
@@ -285,6 +307,36 @@ create index if not exists idx_journal_user      on public.journal_entries(user_
 comment on table public.journal_entries is '灵性研学·用户随笔与打卡';
 
 -- =====================================================
+-- 7.5 calendar_dates · 择日黄历
+--   - 数据来源：老黄历数据库（可批量导入 / cron 任务 / 手填）
+--   - 前端查询：lib/almanac.ts → lookupAlmanac(dateISO)
+--   - 数据空时自动回落 lib/almanac.ts 的 hash 占位实现
+-- =====================================================
+create table if not exists public.calendar_dates (
+  id           bigserial primary key,
+  date         date not null unique,         -- YYYY-MM-DD（公历）
+  lunar_day    text,                          -- 农历日（"廿三" / "初一"）
+  ganzhi_day   text,                          -- 干支日（"甲子"）
+  clash        text,                          -- 冲煞（"冲鼠煞北"）
+  xing         text check (xing is null or xing in ('金', '木', '水', '火', '土')),
+  suitable     text[] not null default '{}',  -- 宜
+  unsuitable   text[] not null default '{}',  -- 忌
+  hours        jsonb not null default '[]'::jsonb,  -- 12 时辰 [{zhi,name,range,yi,ji,fortune}]
+  source       text not null default 'manual',       -- manual / api / imported
+  note         text,                          -- 备注
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create index if not exists idx_calendar_dates_date on public.calendar_dates(date);
+create index if not exists idx_calendar_dates_xing on public.calendar_dates(xing);
+
+comment on table public.calendar_dates is
+  '择日智选·每日黄历数据；空表时前端自动回落到 hash 占位实现';
+comment on column public.calendar_dates.hours is
+  '12 时辰：[{zhi,name,range,yi,ji,fortune}] fortune ∈ {吉,平,凶}';
+
+-- =====================================================
 -- 8. 通用：updated_at 自动维护
 -- =====================================================
 create or replace function public.touch_updated_at()
@@ -303,7 +355,8 @@ begin
     'creators',
     'articles',
     'novels',
-    'user_subscriptions'
+    'user_subscriptions',
+    'calendar_dates'
   ])
   loop
     execute format('drop trigger if exists trg_touch_%I on public.%I', t, t);
@@ -366,6 +419,14 @@ create policy "Users see their own bazi readings" on public.bazi_readings
   for select using (auth.uid() = user_id);
 create policy "Users can save their own bazi reading" on public.bazi_readings
   for insert with check (auth.uid() = user_id);
+
+-- 9.5 calendar_dates：所有人可读，写入仅 service_role（管理员）
+alter table public.calendar_dates enable row level security;
+
+create policy "Calendar dates are publicly readable"
+  on public.calendar_dates for select using (true);
+-- 写入不开放给 anon/authenticated，只能由 service_role 写入
+-- （Dify 同步任务 / 管理员后台 / 批量导入脚本）
 
 -- 9.5 service_role 绕过 RLS 是默认行为
 -- 上面写策略只限制 anon/authenticated 角色，service_role 不受限
