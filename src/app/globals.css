@@ -1,26 +1,40 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * 牧心堂 · 黑金朱砂主题
+ * Tailwind v4 CSS-first 配置：直接在 @theme 中定义颜色 token
+ * 编译后会自动生成 bg-background / text-primary / border-accent 等工具类
+ */
+@theme {
+  --color-background: #0b0b0b;   /* 玄铁黑底 */
+  --color-foreground: #f5f5f5;   /* 月白银字 */
+  --color-primary: #d4af37;      /* 金箔主色 */
+  --color-accent: #c23020;       /* 朱砂强调 */
+  --color-muted: #1a1a1a;        /* 卡片底色 */
+  --color-border: #2a2a2a;       /* 描边灰 */
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-serif: "Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* 全站强制黑金暗色主题（不跟随系统亮色模式） */
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 移动端安全区适配（iOS 底部 Home Indicator） */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 隐藏 Next.js dev indicator（生产环境由 next.config 控制，开发时也保持沉浸） */
+#__next-build-watcher,
+nextjs-portal {
+  display: none !important;
 }
