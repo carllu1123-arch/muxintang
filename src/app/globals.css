@@ -28,6 +28,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 文字选中色：金色 30% 透明（牧心堂定制） */
+::selection {
+  background-color: rgba(212, 175, 55, 0.3);
+  color: var(--color-foreground);
+}
+
 /* 移动端安全区适配（iOS 底部 Home Indicator） */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);

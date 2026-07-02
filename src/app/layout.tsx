@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export const metadata: Metadata = {
   title: "牧心堂 · 灵性修学与生命智测",
@@ -102,37 +103,11 @@ export default function RootLayout({
           </header>
 
           {/* 主内容：移动端预留底部 Tab 高度，PC 端无底部 Tab */}
-          <main className="flex-1 pb-24 md:pb-12">{children}</main>
+          <main className="flex-1 pb-24 md:pb-0">{children}</main>
         </div>
 
         {/* 移动端底部 Tab 导航（fixed bottom-0） */}
-        <nav
-          aria-label="主导航"
-          className="fixed inset-x-0 bottom-0 z-50 md:hidden
-                     bg-black/90 backdrop-blur-lg
-                     border-t border-primary/20
-                     safe-area-bottom"
-        >
-          <ul className="mx-auto flex max-w-md items-stretch justify-around px-2">
-            {MOBILE_TABS.map((tab) => (
-              <li key={tab.href} className="flex-1">
-                <Link
-                  href={tab.href}
-                  className="flex flex-col items-center gap-0.5 py-2
-                             text-foreground/70 transition
-                             active:text-primary"
-                >
-                  <span aria-hidden className="text-lg leading-none">
-                    {tab.icon}
-                  </span>
-                  <span className="text-[11px] tracking-wider">
-                    {tab.label}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <MobileBottomNav />
       </body>
     </html>
   );
