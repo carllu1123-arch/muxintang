@@ -15,6 +15,15 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "off",
       // empty interface 用于 BaziInput 别名 / 类型合并
       "@typescript-eslint/no-empty-object-type": "off",
+      // 带下划线前缀的参数/变量默认为"有意保留"（如占位 props、catch (e) 等）
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
     },
   },
   globalIgnores([
@@ -25,6 +34,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Deployment scripts (use CommonJS require)
     "scripts/**",
+    // Service Worker 是独立运行时,变量/错误处理遵循浏览器 API 习惯
+    "public/sw.js",
   ]),
 ]);
 

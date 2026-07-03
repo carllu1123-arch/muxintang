@@ -4,10 +4,28 @@ import "./globals.css";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SearchPortal } from "@/components/SearchPortal";
 import { PointsBadge } from "@/components/PointsBadge";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import PageTransition from "@/components/PageTransition";
 
 export const metadata: Metadata = {
   title: "牧心堂 · 灵性修学与生命智测",
   description: "生命代码、家居环境、姓名心解——以东方智慧解现代人心。",
+  applicationName: "牧心堂",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "牧心堂",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -104,11 +122,16 @@ export default function RootLayout({
           </header>
 
           {/* 主内容：移动端预留底部 Tab 高度，PC 端无底部 Tab */}
-          <main className="flex-1 pb-24 md:pb-0">{children}</main>
+          <main className="flex-1 pb-24 md:pb-0">
+            <PageTransition>{children}</PageTransition>
+          </main>
         </div>
 
         {/* 移动端底部 Tab 导航（fixed bottom-0） */}
         <MobileBottomNav />
+
+        {/* PWA Service Worker 注册（仅 production 生效） */}
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

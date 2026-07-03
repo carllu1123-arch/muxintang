@@ -90,6 +90,12 @@ const nextConfig: NextConfig = {
   experimental: {
     // serverActions 默认开启即可
   },
+
+  // Turbopack 配置：显式指定根目录，避免 Next.js 16 推断错误
+  // 项目与 C:\Users\lujie\package-lock.json 平级但不是根目录
+  turbopack: {
+    root: process.cwd(),
+  },
 };
 
 export default nextConfig;

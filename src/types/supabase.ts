@@ -285,7 +285,13 @@ export interface Database {
           recipient: string;
           address: string;
           blessing_message: string | null;
-          status: 'pending' | 'blessed' | 'shipped' | 'completed' | 'cancelled';
+          status:
+            | 'pending'
+            | 'blessing'
+            | 'blessed'
+            | 'shipped'
+            | 'completed'
+            | 'cancelled';
           created_at: string;
           updated_at: string;
         };
@@ -296,11 +302,39 @@ export interface Database {
           recipient: string;
           address: string;
           blessing_message?: string | null;
-          status?: 'pending' | 'blessed' | 'shipped' | 'completed' | 'cancelled';
+          status?:
+            | 'pending'
+            | 'blessing'
+            | 'blessed'
+            | 'shipped'
+            | 'completed'
+            | 'cancelled';
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['auspicious_orders']['Insert']>;
+        Relationships: [];
+      };
+      user_memories: {
+        Row: {
+          id: string;
+          user_id: string;
+          /** 记忆类型键，如 'bazi_profile' / 'match_profile' / 'prefs' */
+          key: string;
+          /** 结构化记忆内容（JSONB） */
+          content: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          key: string;
+          content?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['user_memories']['Insert']>;
         Relationships: [];
       };
     };
@@ -355,6 +389,7 @@ export interface Database {
       handle_new_user: { Args: never; Returns: unknown };
       sync_user_profile_tier: { Args: never; Returns: unknown };
       touch_updated_at: { Args: never; Returns: unknown };
+      touch_user_memories_updated_at: { Args: never; Returns: unknown };
       increment_credits: { Args: { p_user_id: string; p_delta: number }; Returns: number };
     };
     Enums: Record<string, never>;
@@ -371,6 +406,7 @@ export type JournalEntry = Database['public']['Tables']['journal_entries']['Row'
 export type Subscription = Database['public']['Tables']['user_subscriptions']['Row'];
 export type BaziReading = Database['public']['Tables']['bazi_readings']['Row'];
 export type AuspiciousOrder = Database['public']['Tables']['auspicious_orders']['Row'];
+export type UserMemory = Database['public']['Tables']['user_memories']['Row'];
 
 export type UserTier = Profile['tier'];
 export type LearnCategory = Article['category'];

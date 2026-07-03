@@ -42,6 +42,8 @@ import { callDify, isDifyConfigured } from '@/lib/dify';
 import { buildLocalInterpretation } from '@/lib/bazi-interpretation';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { createClient as createServerClient } from '@/lib/supabase-server';
+import { getAuthClient } from '@/lib/session';
+import { writeMemory, MEMORY_KEYS } from '@/lib/memory';
 import type { Json } from '@/types/supabase';
 import { parseBirthFromText } from '@/lib/bazi-parser';
 import { ARTICLES } from '@/lib/mock-data';
@@ -305,6 +307,48 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.warn('[api/bazi] supabase unavailable:', e);
     }
+  }
+
+  // 6.5) AI 长期记忆：把命盘核心特征写入 user_memories
+  //   - 异步 fire-and-forget，不阻塞流
+  //   - 未登录 / 未配置 / 任何异常都静默跳过（不影响主流程）
+  //   - 下次 /api/dify 会被自动读取并注入 system_prompt
+  if (isSupabaseConfigured()) {
+    void (async () => {
+      try {
+        const sb = await getAuthClient();
+        if (!sb) return;
+        const { data: u } = await sb.auth.getUser();
+        if (!u?.user) return;
+        const userId = u.user.id;
+
+        // 找最弱五行（命盘特征核心指标之一）
+        const entries = Object.entries(bazi.fiveElements) as [string, number][];
+        const weakestElement =
+          entries.length > 0
+            ? entries.reduce((min, cur) => (cur[1] < min[1] ? cur : min))[0]
+            : null;
+
+        const memoryContent = {
+          pillars: {
+            year: bazi.yearPillar,
+            month: bazi.monthPillar,
+            day: bazi.dayPillar,
+            hour: bazi.hourPillar,
+          },
+          dayMaster: bazi.dayMaster,
+          dayMasterElement: bazi.dayMasterElement,
+          fiveElements: bazi.fiveElements,
+          weakestElement,
+          deity: bazi.deity,
+          zodiac: bazi.zodiac,
+          lastReadingAt: new Date().toISOString(),
+        };
+        await writeMemory(userId, MEMORY_KEYS.BAZI_PROFILE, memoryContent as unknown as Json);
+      } catch (e) {
+        console.warn('[api/bazi] memory write skipped:', e);
+      }
+    })();
   }
 
   // 7) 构建流式响应

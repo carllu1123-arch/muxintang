@@ -77,7 +77,7 @@ export async function getArticle(
         .eq('slug', slug)
         .maybeSingle();
       if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       return data ? (data as unknown as ArticleWithAuthor) : null;
     } catch (e) {
       console.warn('[data] getArticle DB failed, fallback to mock:', e);
@@ -137,7 +137,7 @@ export async function getChapter(slug: string): Promise<NovelWithAuthor | null> 
         .eq('slug', slug)
         .maybeSingle();
       if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       return data ? (data as unknown as NovelWithAuthor) : null;
     } catch (e) {
       console.warn('[data] getChapter DB failed, fallback to mock:', e);

@@ -36,6 +36,9 @@
 
 import { NextRequest } from 'next/server';
 import { callDify, isDifyConfigured } from '@/lib/dify';
+import { getAuthClient, isSupabaseAuthConfigured } from '@/lib/session';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { listMemories, memoriesToSystemPrompt } from '@/lib/memory';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -105,6 +108,34 @@ export async function POST(req: NextRequest) {
 
   const user = typeof body.user === 'string' && body.user.trim() ? body.user.trim() : undefined;
 
+  // 1.5) 加载 AI 长期记忆（未登录 / 未配置 / 失败都返回空 → 不注入）
+  //   - 用 listMemories 一次拿全，按 key 顺序注入 system_prompt
+  //   - /api/bazi 排盘完成后会自动写入 bazi_profile
+  //   - 静默容错：异常只 console.warn，不影响主流程
+  let memoryAugmentedPrompt = systemPrompt;
+  if (isSupabaseAuthConfigured() && isSupabaseConfigured()) {
+    try {
+      const sb = await getAuthClient();
+      if (sb) {
+        const { data: u } = await sb.auth.getUser();
+        if (u?.user) {
+          const memories = await listMemories(u.user.id);
+          const memoryPrompt = memoriesToSystemPrompt(
+            memories.map((m) => ({ key: m.key, content: m.content })),
+          );
+          if (memoryPrompt) {
+            memoryAugmentedPrompt = `${systemPrompt}\n\n${memoryPrompt}`;
+            console.info(
+              `[api/dify] memory injected: ${memories.length} entries for user=${u.user.id.slice(0, 8)}...`,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[api/dify] memory load failed (silent):', e);
+    }
+  }
+
   // 2) 调 Dify（不阻塞主流程；失败回退）
   let text = '';
   let source: 'dify' | 'local' | 'echo' = 'local';
@@ -112,7 +143,8 @@ export async function POST(req: NextRequest) {
   if (isDifyConfigured()) {
     // 把 system_prompt 注入到 inputs.system（如果对方是 workflow）
     // 同时把 query 注入到 query，供 Chat App 用
-    const inputs: Record<string, unknown> = { ...context, system: systemPrompt };
+    //   - systemPrompt 已经被 long-term memory 增强（如果该用户有记忆）
+    const inputs: Record<string, unknown> = { ...context, system: memoryAugmentedPrompt };
     const r = await callDify({
       query,
       context: inputs,

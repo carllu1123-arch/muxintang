@@ -120,7 +120,7 @@ export function WallpaperSection() {
     };
   }, [user]);
 
-  function generateWallpaper(t: Theme) {
+  const generateWallpaper = useCallback((t: Theme) => {
     setTheme(t);
     setImgLoading(true);
     setImgUrl(null);
@@ -131,7 +131,7 @@ export function WallpaperSection() {
     // pollinations.ai 直接返回图片，<img src> 自动触发加载
     const url = `https://image.pollinations.ai/prompt/${prompt}?width=1080&height=1920&seed=${seed}&nologo=true`;
     setImgUrl(url);
-  }
+  }, []);
 
   /** 实际下载图片字节并触发浏览器保存 */
   async function downloadImageBytes() {

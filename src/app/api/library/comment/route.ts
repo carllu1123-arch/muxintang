@@ -125,12 +125,12 @@ export async function POST(req: NextRequest) {
           userData.user.email?.split('@')[0] ||
           '道友';
         // 读 profile.role
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const { data: profile } = await (authClient.from('user_profiles') as any)
           .select('display_name, role')
           .eq('id', userData.user.id)
           .maybeSingle();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const p = profile as any;
         if (p) {
           if (p.display_name) authorName = p.display_name;
@@ -216,12 +216,12 @@ export async function PATCH(req: NextRequest) {
     if (authClient) {
       const { data: userData } = await authClient.auth.getUser();
       if (userData?.user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const { data: profile } = await (authClient.from('user_profiles') as any)
           .select('role')
           .eq('id', userData.user.id)
           .maybeSingle();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         userRole = (profile as any)?.role ?? 'reader';
       }
     }

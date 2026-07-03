@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { SearchPortal } from "@/components/SearchPortal";
 import { PointsBadge } from "@/components/PointsBadge";
 
@@ -11,6 +14,8 @@ import { PointsBadge } from "@/components/PointsBadge";
  * - 包含 iOS 安全区适配（safe-area-bottom）
  * - 第 2 位为搜索入口（SearchPortal client component）
  * - "我的" Tab 右上角显示积分徽章（PointsBadge，登录后可见）
+ * - 移动端地址栏自动隐藏：用户首次产生滚动时，scrollTo(0, 1) 欺骗
+ *   浏览器折叠地址栏；后续不再触发（避免与用户主动滚动冲突）
  *
  * Tab 顺序：首页 / 搜索 / 密解 / 故事 / 研习 / 我的
  */
@@ -23,6 +28,32 @@ const TABS = [
 ] as const;
 
 export function MobileBottomNav({ className = "" }: { className?: string }) {
+  // 移动端地址栏自动隐藏
+  //   - 仅在首次滚动触发一次（用 ref 守门，避免干扰用户后续滚动）
+  //   - 仅窄屏（< 768px）生效：matchMedia 监听，断开后自动 stop
+  //   - 仅在 scrollY === 0 时 scrollTo(1)：用户已离开顶部时不干预
+  //   - passive: true：不阻塞滚动主线程
+  const addressBarHiddenRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 767.98px)");
+    if (!mql.matches) return;
+
+    const onFirstScroll = () => {
+      if (addressBarHiddenRef.current) return;
+      if (window.scrollY > 0) return; // 已离开顶部，不干预
+      addressBarHiddenRef.current = true;
+      // 同步触发一次 1px 滚动，骗浏览器折叠地址栏
+      window.scrollTo({ top: 1, behavior: "auto" });
+      // 摘除监听，后续不再触发
+      window.removeEventListener("scroll", onFirstScroll);
+    };
+    window.addEventListener("scroll", onFirstScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onFirstScroll);
+    };
+  }, []);
+
   return (
     <nav
       aria-label="主导航"

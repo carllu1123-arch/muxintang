@@ -115,12 +115,12 @@ export async function POST(req: NextRequest) {
           (userData.user.user_metadata?.display_name as string) ||
           userData.user.email?.split('@')[0] ||
           '道友';
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const { data: profile } = await (authClient.from('user_profiles') as any)
           .select('display_name, role')
           .eq('id', userData.user.id)
           .maybeSingle();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const p = profile as any;
         if (p) {
           if (p.display_name) authorName = p.display_name;

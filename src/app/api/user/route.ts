@@ -55,7 +55,7 @@ export async function GET() {
     if (!userData?.user) return NextResponse.json({ user: null });
 
     // 读 profile（含订阅 tier + role）
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { data: profile } = await (sb.from('user_profiles') as any)
       .select(
         'display_name, avatar_url, tier, tier_expires_at, birth_date, birth_hour, gender, role, credits, wallpaper_month, wallpaper_used',

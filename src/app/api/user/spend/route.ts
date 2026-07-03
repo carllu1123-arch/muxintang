@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 3) 查当前余额
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { data: profile, error: profileErr } = await (sb.from('user_profiles') as any)
     .select('credits')
     .eq('id', userId)
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
 
   // 4) 原子扣减（RPC：increment_credits(userId, -amount)）
   //    并发竞态下若 credits 变负，CHECK 约束会抛异常 → 兜底返回 insufficient
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { data: newBalance, error: rpcErr } = await (sb.rpc as any)(
     'increment_credits',
     { p_user_id: userId, p_delta: -amount },

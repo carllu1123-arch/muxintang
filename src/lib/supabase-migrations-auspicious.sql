@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.auspicious_orders (
   address         text NOT NULL,
   blessing_message text,
   status          text NOT NULL DEFAULT 'pending'
-                  CHECK (status IN ('pending', 'blessed', 'shipped', 'completed', 'cancelled')),
+                  CHECK (status IN ('pending', 'blessing', 'blessed', 'shipped', 'completed', 'cancelled')),
   created_at      timestamptz NOT NULL DEFAULT now(),
   updated_at      timestamptz NOT NULL DEFAULT now()
 );
@@ -66,3 +66,44 @@ CREATE POLICY "users_update_own_orders"
   USING (auth.uid()::text = user_id);
 
 -- 服务端（service_role）绕过 RLS，可读取所有记录用于管理
+
+-- 5. 阿阇梨后台：补强 status 流转（已部署项目升级）
+-- 老库 status 枚举是 ('pending', 'blessed', 'shipped', 'completed', 'cancelled')
+-- 补一个 'blessing'（加持中）状态位，让阿阇梨可以分阶段标记订单
+DO $$
+BEGIN
+  -- 重新声明 CHECK 约束以包含新状态位
+  ALTER TABLE public.auspicious_orders
+    DROP CONSTRAINT IF EXISTS auspicious_orders_status_check;
+  ALTER TABLE public.auspicious_orders
+    ADD CONSTRAINT auspicious_orders_status_check
+    CHECK (status IN ('pending', 'blessing', 'blessed', 'shipped', 'completed', 'cancelled'));
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'status check constraint update skipped: %', SQLERRM;
+END $$;
+
+-- 6. 阿阇梨后台：补全管理员 SELECT 策略
+-- 老库只有 "用户只能看自己的"，管理员需要查看全量
+DROP POLICY IF EXISTS "acharya_select_all_orders" ON public.auspicious_orders;
+CREATE POLICY "acharya_select_all_orders"
+  ON public.auspicious_orders FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.user_profiles
+      WHERE id = auth.uid()::text
+        AND role IN ('acharya', 'admin')
+    )
+  );
+
+-- 7. 阿阇梨后台：补全管理员 UPDATE 策略
+-- 用户可以取消自己的订单；管理员可更新任何订单
+DROP POLICY IF EXISTS "acharya_update_all_orders" ON public.auspicious_orders;
+CREATE POLICY "acharya_update_all_orders"
+  ON public.auspicious_orders FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.user_profiles
+      WHERE id = auth.uid()::text
+        AND role IN ('acharya', 'admin')
+    )
+  );

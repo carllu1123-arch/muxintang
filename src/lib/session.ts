@@ -81,13 +81,13 @@ export async function getCurrentSession(): Promise<CurrentSession | null> {
   const user = userData.user;
 
   // 读 profile（可能尚未创建）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { data: profile } = await (sb.from('user_profiles') as any)
     .select('*')
     .eq('id', user.id)
     .maybeSingle();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const p = profile as any;
 
   // 检查 tier 是否过期，过期则降级为 free（但不写库，由 webhook 取消时写）

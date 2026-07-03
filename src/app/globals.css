@@ -28,6 +28,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 移动端环境干扰处理
+ * - 底部安全区：iOS Home Indicator / Android 手势导航条不会遮挡 Tab 栏
+ *   （MobileBottomNav 已用 .safe-area-bottom；这里再补一层 body 兜底）
+ * - 防止滚动到顶/底时的橡皮筋回弹露出白底（页面背景是 #0B0B0B）
+ */
+body {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  overscroll-behavior-y: none;
+}
+
 /* 文字选中色：金色 30% 透明（牧心堂定制） */
 ::selection {
   background-color: rgba(212, 175, 55, 0.3);

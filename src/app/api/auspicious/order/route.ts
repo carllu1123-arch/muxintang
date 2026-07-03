@@ -1,25 +1,35 @@
 /**
  * 牧心堂 · 吉祥馆 · 请奉登记 API
  *
- * POST /api/auspicious/order
- *   body: {
+ * POST   /api/auspicious/order              — 提交新请奉
+ * PATCH  /api/auspicious/order?id=xxx       — 阿阇梨更新状态（仅 role='acharya'/'admin'）
+ * GET    /api/auspicious/order              — 健康检查
+ *
+ * POST body:
+ *   {
  *     product_type: 'scroll' | 'bracelet' | 'sachet',
  *     recipient: string,
  *     address: string,
  *     blessing_message?: string,
  *   }
  *
- *   响应：{ ok: true, id: string } 或 { error: string }
+ * PATCH body:
+ *   { status: 'pending' | 'blessing' | 'blessed' | 'shipped' | 'completed' | 'cancelled' }
  *
  * 数据流：
- *   1. 读取 Supabase Auth 拿 user_id（未登录可提交，user_id = null）
- *   2. 校验必填字段
- *   3. 写入 auspicious_orders 表（status: 'pending'）
- *   4. Supabase 未配置 → mock 成功（不真正写库，但前端体验正常）
+ *   1. POST 提交 → 写库 / mock
+ *   2. PATCH 更新 → 鉴权角色 → 改 status
  *
  * 表结构（见 src/lib/supabase-migrations-auspicious.sql）：
  *   id (uuid), user_id (text), product_type (text), recipient (text),
  *   address (text), blessing_message (text), status (text), created_at (timestamptz)
+ *
+ * status 流转：
+ *   pending → blessing（阿阇梨开始加持）
+ *   blessing → blessed（开光完成）
+ *   blessed  → shipped（已寄出）
+ *   shipped  → completed（已结缘）
+ *   任意态 → cancelled（取消）
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -32,6 +42,23 @@ export const dynamic = 'force-dynamic';
 type ProductType = 'scroll' | 'bracelet' | 'sachet';
 
 const VALID_PRODUCTS: ProductType[] = ['scroll', 'bracelet', 'sachet'];
+
+type OrderStatus =
+  | 'pending'
+  | 'blessing'
+  | 'blessed'
+  | 'shipped'
+  | 'completed'
+  | 'cancelled';
+
+const VALID_STATUSES: OrderStatus[] = [
+  'pending',
+  'blessing',
+  'blessed',
+  'shipped',
+  'completed',
+  'cancelled',
+];
 
 export async function POST(req: NextRequest) {
   let body: {
@@ -109,6 +136,81 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     console.error('[api/auspicious/order] unexpected:', e);
     return NextResponse.json({ error: '服务异常，请稍后重试' }, { status: 500 });
+  }
+}
+
+/* ============ PATCH · 阿阇梨更新状态 ============ */
+export async function PATCH(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get('id');
+  if (!id) {
+    return NextResponse.json({ error: '缺少订单 id' }, { status: 400 });
+  }
+
+  let body: { status?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: '请求体必须为 JSON' }, { status: 400 });
+  }
+
+  const status = body.status as OrderStatus;
+  if (!VALID_STATUSES.includes(status)) {
+    return NextResponse.json({ error: '订单状态无效' }, { status: 400 });
+  }
+
+  // 角色校验：仅 acharya / admin 可更新
+  let userRole = 'reader';
+  try {
+    const authClient = await getAuthClient();
+    if (authClient) {
+      const { data: userData } = await authClient.auth.getUser();
+      if (userData?.user) {
+         
+        const { data: profile } = await (authClient.from('user_profiles') as any)
+          .select('role')
+          .eq('id', userData.user.id)
+          .maybeSingle();
+         
+        userRole = (profile as any)?.role ?? 'reader';
+      }
+    }
+  } catch {
+    /* 静默 */
+  }
+
+  if (userRole !== 'acharya' && userRole !== 'admin') {
+    return NextResponse.json(
+      { error: '仅阿阇梨可更新订单状态' },
+      { status: 403 },
+    );
+  }
+
+  // Supabase 未配置 → mock 成功（不真正写库，前端体验正常）
+  if (!isSupabaseConfigured()) {
+    console.log(
+      `[api/auspicious/order] mock mode: order ${id} status → ${status}`,
+    );
+    return NextResponse.json({ ok: true, id, status, mock: true });
+  }
+
+  try {
+    const sb = createClient();
+    const { data, error } = await sb
+      .from('auspicious_orders')
+      .update({ status, updated_at: new Date().toISOString() } as never)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('[api/auspicious/order] update failed:', error);
+      return NextResponse.json({ error: '更新失败，请稍后重试' }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true, order: data });
+  } catch (e) {
+    console.error('[api/auspicious/order] update unexpected:', e);
+    return NextResponse.json({ error: '服务异常' }, { status: 500 });
   }
 }
 

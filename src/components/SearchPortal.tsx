@@ -168,7 +168,7 @@ export function SearchPortal({ variant }: SearchPortalProps) {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open]);
 
   function handleClose() {

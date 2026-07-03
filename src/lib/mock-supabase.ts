@@ -351,7 +351,6 @@ function buildGenericTableQuery(table: string) {
   let orderClause: { col: string; asc: boolean } | null = null;
   let limitN: number | null = null;
   let mode: 'select' | 'insert' | 'update' | 'delete' | 'upsert' = 'select';
-  let pendingPayload: any = null;
 
   const isMessagesTable = table === 'chat_messages';
   const isTopicsTable = table === 'topics';
@@ -359,11 +358,6 @@ function buildGenericTableQuery(table: string) {
     if (isMessagesTable) return readStore();
     if (isTopicsTable) return readTopics();
     return [];
-  };
-
-  const persist = (rows: any[]) => {
-    if (isMessagesTable) writeStore(rows);
-    else if (isTopicsTable) writeTopics(rows as any);
   };
 
   const execSelect = async () => {
@@ -482,7 +476,6 @@ function buildGenericTableQuery(table: string) {
       // —— mutations（mock：chat_messages / topics 持久化；其它表返空） ——
       insert(row: any) {
         mode = 'insert';
-        pendingPayload = row;
         if (isMessagesTable) {
           const all = readStore();
           const newRow: MockMessage = {
@@ -523,7 +516,6 @@ function buildGenericTableQuery(table: string) {
       },
       update(patch: any) {
         mode = 'update';
-        pendingPayload = patch;
         // mock：链式 update 不支持 wait thenable；显式 then 时再 apply
         if (isTopicsTable) {
           const all = readTopics();
@@ -538,7 +530,6 @@ function buildGenericTableQuery(table: string) {
       },
       upsert(row: any) {
         mode = 'upsert';
-        pendingPayload = row;
         if (isTopicsTable) {
           const all = readTopics();
           const idx = all.findIndex((r) => r.id === row?.id);

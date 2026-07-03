@@ -121,3 +121,68 @@ BEGIN
       ADD COLUMN wallpaper_used integer NOT NULL DEFAULT 0;
   END IF;
 END $$;
+
+-- ============ 5. user_memories · AI 长期记忆 ============
+-- 阿阇梨"记得你"的物理存储：把每次排盘 / 合盘后抽出的核心特征
+-- 写入这张表，下次 AI 解读前读取并注入 system_prompt。
+--
+-- 设计要点：
+--   - 1:N（一个 user 可有多种 key 的记忆，如 bazi_profile / match_profile / prefs）
+--   - 唯一约束 (user_id, key) → upsert 语义天然正确
+--   - content 字段是 JSONB，前端/后端按需取字段
+--   - 不写敏感信息（生辰存到 user_profiles，这里只存命盘特征）
+create table if not exists public.user_memories (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    text not null references auth.users(id) on delete cascade,
+  key        text not null,                          -- 如 'bazi_profile' / 'match_profile'
+  content    jsonb not null default '{}'::jsonb,     -- 结构化特征数据
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, key)
+);
+
+create index if not exists idx_user_memories_user
+  on public.user_memories(user_id, updated_at desc);
+
+create index if not exists idx_user_memories_user_key
+  on public.user_memories(user_id, key, updated_at desc);
+
+comment on table public.user_memories is
+  'AI 长期记忆：阿阇梨的跨会话记忆（命盘特征 / 用户偏好 / 关键事实）';
+
+-- updated_at 自动维护
+create or replace function public.touch_user_memories_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_user_memories_touch on public.user_memories;
+create trigger trg_user_memories_touch
+  before update on public.user_memories
+  for each row execute procedure public.touch_user_memories_updated_at();
+
+-- RLS
+alter table public.user_memories enable row level security;
+
+-- 用户只读自己的记忆
+create policy "users_select_own_memories"
+  on public.user_memories for select
+  using (auth.uid()::text = user_id);
+
+-- 用户可插入 / 更新自己的记忆（前端或服务端代理均可）
+create policy "users_upsert_own_memories"
+  on public.user_memories for insert
+  with check (auth.uid()::text = user_id);
+
+create policy "users_update_own_memories"
+  on public.user_memories for update
+  using (auth.uid()::text = user_id)
+  with check (auth.uid()::text = user_id);
+
+-- 用户可删除自己的记忆（GDPR / 隐私需要）
+create policy "users_delete_own_memories"
+  on public.user_memories for delete
+  using (auth.uid()::text = user_id);

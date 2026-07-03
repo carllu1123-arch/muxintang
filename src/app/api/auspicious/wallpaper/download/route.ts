@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 3) 读 profile
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { data: profile, error: profileErr } = await (sb.from('user_profiles') as any)
     .select('tier, credits, wallpaper_month, wallpaper_used')
     .eq('id', userId)
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
     }
     // 免费道友：检查当月额度
     if (effectiveUsed < FREE_MONTHLY_QUOTA) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const { error: updErr } = await (sb.from('user_profiles') as any)
         .update({
           wallpaper_month: month,
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 原子扣减（check 约束兜底竞态）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { data: newBalance, error: rpcErr } = await (sb.rpc as any)(
     'increment_credits',
     { p_user_id: userId, p_delta: -CREDITS_COST },

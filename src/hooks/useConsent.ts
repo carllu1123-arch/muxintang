@@ -1,5 +1,24 @@
 'use client'
 
+/**
+ * ⚠️ 待接入：用户是否已同意免责声明（localStorage）
+ *
+ * 这个 hook 已经实现完整（useConsent + useConsentModal 两个导出），
+ * 但目前没有任何页面/组件引用它。
+ *
+ * 计划用途：用户首次访问任意含"AI 开示 / 占卜"内容的页面时，
+ * 弹出黑金风格的"免责声明"模态框，确认后才进入深度解读。
+ * （尤其 /tools/bazi、/tools/match 等需要灵性解读的页面）
+ *
+ * 接入步骤（待办）：
+ *   1) 在 src/app/layout.tsx 内挂一个 <ConsentGate /> 客户端组件
+ *   2) <ConsentGate /> 调用 useConsentModal()，hydrated && !hasConsented 时渲染
+ *   3) 模态框内容：牧心堂·免责声明 + 同意/退出 按钮
+ *
+ * 暂时保留：以下功能模块依赖的 useState/useEffect API 是稳定的
+ * （没有外部依赖，迁移成本 0）。
+ */
+
 import { useEffect, useState } from 'react'
 
 const STORAGE_KEY = 'user_consent'

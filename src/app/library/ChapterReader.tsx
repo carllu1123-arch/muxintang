@@ -257,7 +257,7 @@ export function ChapterReader({
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
     // 故意不依赖 currentParaIdx，用 ref 避免每次滚动重建 observer
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [chapterSlug, chapterTitle, chapterIndex, storyType, paragraphs.length]);
 
   // 点击 🪷 金句海报 → 先弹积分确认

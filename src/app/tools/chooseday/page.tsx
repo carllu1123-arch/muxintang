@@ -34,12 +34,10 @@ export default function ChooseDayPage() {
   const [date, setDate] = useState<string>(todayISO());
   const [result, setResult] = useState<AlmanacDay | null>(null);
   const [loading, setLoading] = useState(false);
-  const [touched, setTouched] = useState(false);
 
   async function handleQuery() {
     if (!date) return;
     setLoading(true);
-    setTouched(true);
     try {
       const r = await lookupAlmanac(date);
       setResult(r);

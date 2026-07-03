@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 3) 写入（使用 auth.uid() 拿到的 userId，RLS 会校验）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { error: updateErr } = await (sb.from('user_profiles') as any)
     .update({ birth_date: birthDate, birth_hour: birthHour, gender })
     .eq('id', userId);

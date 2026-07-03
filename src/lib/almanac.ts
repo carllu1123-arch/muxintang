@@ -169,7 +169,7 @@ async function lookupAlmanacFromDB(dateISO: string): Promise<AlmanacDay | null> 
     // 修正 dateISO → "YYYY-MM-DD"（supabase 期望）
     const dateOnly = dateISO.slice(0, 10);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { data, error } = await (supabase.from('calendar_dates') as any)
       .select('date, lunar_day, ganzhi_day, clash, xing, suitable, unsuitable, hours')
       .eq('date', dateOnly)

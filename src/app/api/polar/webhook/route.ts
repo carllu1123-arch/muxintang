@@ -127,7 +127,7 @@ async function handleSubscription(
   const periodEnd = sub.current_period_end ?? null;
 
   // 1) upsert subscription
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { error: subErr } = await (sb.from('user_subscriptions') as any)
     .upsert(
       {
@@ -154,7 +154,7 @@ async function handleSubscription(
 
   // 2) 同步更新 user_profiles.tier
   if (status === 'active') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { error: profErr } = await (sb.from('user_profiles') as any)
       .update({
         tier,
@@ -180,7 +180,7 @@ async function handleSubscriptionCanceled(
   const userId = sub.customer?.external_id || extractUserId({ type: '', data: sub });
   if (!userId) return;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { error: subErr } = await (sb.from('user_subscriptions') as any)
     .update({
       status: 'canceled',
@@ -193,7 +193,7 @@ async function handleSubscriptionCanceled(
   }
 
   // 立刻把 profile 降回 free
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { error: profErr } = await (sb.from('user_profiles') as any)
     .update({
       tier: 'free',
@@ -230,13 +230,13 @@ async function handleOrder(
       } as any);
       if (error) {
         // rpc 失败时回退到读 + 写
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const { data: cur } = await (sb.from('user_profiles') as any)
           .select('credits')
           .eq('id', userId)
           .maybeSingle();
         const newCredits = ((cur as any)?.credits ?? 0) + credits;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         await (sb.from('user_profiles') as any)
           .update({ credits: newCredits, updated_at: new Date().toISOString() })
           .eq('id', userId);
