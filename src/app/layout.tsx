@@ -41,6 +41,7 @@ const PC_NAV = [
   { label: "行者故事", href: "/library" },
   { label: "灵性研学", href: "/study" },
   { label: "吉祥馆", href: "/auspicious" },
+  { label: "创作者", href: "/creators" },
   { label: "关于", href: "/about" },
 ];
 
