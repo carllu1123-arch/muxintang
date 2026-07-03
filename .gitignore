@@ -37,6 +37,15 @@ yarn-error.log*
 # vercel
 .vercel
 
+# git credential / netrc（绝对不能入库）
+.netrc
+_netrc
+.git-credentials
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 部署脚本产物
+*.log
+.DS_Store

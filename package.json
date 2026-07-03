@@ -7,7 +7,14 @@
     "build": "next build",
     "start": "next start",
     "start:standalone": "node scripts/start-standalone.js",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "pre-deploy": "npm run typecheck && npm run lint && npm run build",
+    "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1",
+    "deploy:bash": "bash scripts/deploy.sh",
+    "deploy:check": "npm run typecheck && npm run lint",
+    "deploy:skip-build": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1 -SkipBuild",
+    "deploy:dry-run": "powershell -ExecutionPolicy Bypass -File scripts/deploy.ps1 -DryRun"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.3.0",
