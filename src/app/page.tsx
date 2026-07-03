@@ -1,31 +1,6 @@
 import Link from "next/link";
-
-/**
- * 智测工具入口
- * - 生命代码：按出生年月日解读生命轨迹
- * - 家居环境：方位 + 户型 + 出生信息综合
- * - 姓名心解：汉字五行 + 音律场 + 字形结构
- */
-const TOOLS = [
-  {
-    title: "生命代码",
-    desc: "出生 · 看见你的本然频率",
-    href: "/tools/bazi",
-    glyph: "☷",
-  },
-  {
-    title: "家居环境",
-    desc: "户型 · 调和人居与气场",
-    href: "/tools/habitat",
-    glyph: "◉",
-  },
-  {
-    title: "姓名心解",
-    desc: "汉字 · 听见名字的回声",
-    href: "/tools/name",
-    glyph: "✎",
-  },
-] as const;
+import { Mandala } from "@/components/Mandala";
+import { getRecommendedArticles } from "@/lib/data";
 
 /**
  * 密解专栏
@@ -57,7 +32,10 @@ const COLUMNS = [
   },
 ] as const;
 
-export default function HomePage() {
+export default async function HomePage() {
+  // 自动推广：3 篇不同作者的最新文章/章节（每日稳定轮换）
+  const recommended = await getRecommendedArticles(3);
+
   return (
     // 区块间虚空感：移动 gap-12，PC 端 gap-20
     <div className="flex flex-col gap-12 pt-6 md:gap-20 md:pt-12">
@@ -68,13 +46,14 @@ export default function HomePage() {
                    max-[340px]:scale-[0.78] origin-top"
       >
         <div className="flex flex-col gap-8 md:flex-row md:gap-16 md:items-stretch">
-          {/* 左侧：智测工具卡片（磨砂玻璃黑底 + 金边） */}
+          {/* 左侧：阿阇梨对话主入口（黑金巨型 CTA） */}
           <div
             className="relative w-full overflow-hidden rounded-2xl
-                       border border-primary/30
-                       bg-black/60 p-6 backdrop-blur-md
-                       shadow-[0_0_60px_-30px_rgba(212,175,55,0.45)]
-                       md:max-w-lg md:flex-1 md:p-8"
+                       border border-primary/40
+                       bg-gradient-to-br from-black/80 via-black/60 to-black/80
+                       p-6 backdrop-blur-md
+                       shadow-[0_0_80px_-25px_rgba(212,175,55,0.55)]
+                       md:max-w-lg md:flex-1 md:p-10"
           >
             {/* 卡片装饰：右上角朱砂印 */}
             <span
@@ -83,58 +62,85 @@ export default function HomePage() {
                          h-20 w-20 rounded-full
                          bg-accent/20 blur-2xl"
             />
+            {/* 卡片装饰：左下角金光 */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -left-8 bottom-1/3
+                         h-32 w-32 rounded-full
+                         bg-primary/15 blur-3xl"
+            />
 
             <header className="flex items-baseline justify-between">
-              <h1
-                className="font-serif text-3xl tracking-wider text-primary
-                           md:text-5xl"
-              >
-                智测·生命代码
-              </h1>
+              <p className="text-[10px] tracking-[0.4em] text-primary/70">
+                ĀCĀRYA · AI 伴行
+              </p>
               <span className="text-[10px] tracking-[0.3em] text-foreground/40">
-                WISDOM · TOOLS
+                ALWAYS · HERE
               </span>
             </header>
 
-            <p className="mt-3 text-sm text-foreground/70 md:mt-4 md:text-base">
-              三分钟，看见自己的本然频率。
+            <h1
+              className="mt-6 font-serif text-3xl leading-tight tracking-wider
+                         text-foreground md:mt-8 md:text-5xl"
+            >
+              在每一个
+              <span className="block text-primary">愿被听见的时刻</span>
+            </h1>
+
+            <p className="mt-4 text-sm leading-relaxed text-foreground/70 md:mt-6 md:text-base">
+              排盘、心事、择日、合盘、姓名——
+              <br className="hidden md:block" />
+              阿阇梨于此静候，无问东西。
             </p>
 
-            {/* 三个输入入口（移动端 flex-col，PC 端并排） */}
-            <ul className="mt-6 flex flex-col gap-3 md:mt-8 md:flex-row md:gap-4">
-              {TOOLS.map((t) => (
-                <li key={t.href} className="md:flex-1">
-                  <Link
-                    href={t.href}
-                    className="group flex h-full flex-col gap-2
-                               rounded-xl border border-primary/25
-                               bg-background/60 p-4 transition
-                               hover:border-primary hover:bg-primary/5
-                               md:p-5"
-                  >
-                    <span
-                      aria-hidden
-                      className="text-2xl text-primary/80 transition group-hover:text-primary md:text-3xl"
-                    >
-                      {t.glyph}
-                    </span>
-                    <span className="font-serif text-base text-foreground md:text-lg">
-                      {t.title}
-                    </span>
-                    <span className="text-xs leading-relaxed text-foreground/60 md:text-sm">
-                      {t.desc}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {/* 巨型黑金 CTA：开启阿阇梨对话 */}
+            <Link
+              href="/tools/bazi"
+              className="group mt-8 flex items-center justify-center gap-3
+                         rounded-2xl border border-primary/60
+                         bg-gradient-to-br from-primary via-primary/90 to-primary/70
+                         px-6 py-5 font-serif text-lg text-background
+                         shadow-[0_0_30px_-10px_rgba(212,175,55,0.6)]
+                         transition-all duration-300
+                         hover:scale-[1.02] hover:shadow-[0_0_50px_-5px_rgba(212,175,55,0.85)]
+                         md:mt-10 md:px-8 md:py-6 md:text-xl"
+            >
+              <span
+                aria-hidden
+                className="text-2xl transition-transform duration-500 group-hover:rotate-12 md:text-3xl"
+              >
+                ☸
+              </span>
+              <span className="tracking-wider">开启阿阇梨对话</span>
+              <span
+                aria-hidden
+                className="text-base transition-transform duration-300 group-hover:translate-x-1 md:text-lg"
+              >
+                →
+              </span>
+            </Link>
 
-            <p className="mt-6 text-[11px] tracking-wider text-foreground/40">
-              · 输入即生成，结果仅作修行参考 ·
-            </p>
+            {/* 副链接：其他工具入口（弱化显示） */}
+            <div className="mt-6 flex items-center justify-center gap-4 text-[11px] tracking-wider text-foreground/40">
+              <Link href="/tools/chooseday" className="transition hover:text-primary/70">
+                择日
+              </Link>
+              <span className="text-foreground/20">·</span>
+              <Link href="/tools/match" className="transition hover:text-primary/70">
+                合盘
+              </Link>
+              <span className="text-foreground/20">·</span>
+              <Link href="/tools/habitat" className="transition hover:text-primary/70">
+                家居
+              </Link>
+              <span className="text-foreground/20">·</span>
+              <Link href="/tools/name" className="transition hover:text-primary/70">
+                姓名
+              </Link>
+            </div>
           </div>
 
-          {/* 右侧：3D 曼荼罗占位（仅 PC 端，固定 400px 高度） */}
+          {/* 右侧：动态曼荼罗（autoSpin 自动呼吸旋转，hero 装饰用） */}
           <aside
             className="relative hidden h-[400px] overflow-hidden rounded-2xl
                        border border-primary/20
@@ -152,31 +158,10 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* 装饰元素：同心圆 + 朱砂点（CSS-only 曼荼罗占位） */}
+            {/* 动态曼荼罗：呼吸 + 旋转 */}
             <div className="relative mt-6 h-56 w-full">
-              <div className="absolute inset-0 grid place-items-center">
-                <div className="relative h-56 w-56">
-                  <span className="absolute inset-0 animate-[spin_60s_linear_infinite] rounded-full border border-primary/20" />
-                  <span className="absolute inset-3 animate-[spin_45s_linear_infinite_reverse] rounded-full border border-primary/30" />
-                  <span className="absolute inset-7 animate-[spin_30s_linear_infinite] rounded-full border border-primary/40" />
-                  <span className="absolute inset-12 rounded-full border border-primary/60" />
-                  <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_20px_rgba(194,48,32,0.6)]" />
-                  {/* 八个方位点 */}
-                  {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
-                    <span
-                      key={deg}
-                      aria-hidden
-                      className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/70"
-                      style={{ transform: `translate(-50%, -50%) rotate(${deg}deg) translateY(-90px)` }}
-                    />
-                  ))}
-                </div>
-              </div>
+              <Mandala autoSpin element={null} isActive={true} />
             </div>
-
-            <p className="text-[10px] tracking-[0.3em] text-foreground/30">
-              TAIZŌKAI · MANDALA · PLACEHOLDER
-            </p>
           </aside>
         </div>
       </section>
@@ -226,6 +211,100 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ===== 自动推广：3 篇不同作者的最新内容 ===== */}
+      {recommended.length > 0 && (
+        <section>
+          <header className="mb-6 flex items-baseline justify-between md:mb-8">
+            <div>
+              <h2 className="font-serif text-2xl tracking-wider text-foreground md:text-4xl">
+                阿阇梨今日荐读
+              </h2>
+              <p className="mt-1 text-[10px] tracking-[0.3em] text-foreground/40">
+                DAILY · 不同作者 · 心解精选
+              </p>
+            </div>
+            <span
+              aria-hidden
+              className="hidden font-serif text-sm text-primary/40 md:block"
+            >
+              {new Date().toLocaleDateString('zh-CN', {
+                month: 'long',
+                day: 'numeric',
+              })}
+            </span>
+          </header>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
+            {recommended.map((r, i) => (
+              <Link
+                key={r.id}
+                href={r.href}
+                className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl
+                           border border-primary/30
+                           bg-gradient-to-br from-primary/5 via-transparent to-transparent
+                           p-5 backdrop-blur-md transition
+                           hover:border-primary hover:shadow-[0_0_40px_-15px_rgba(212,175,55,0.5)]
+                           md:p-6"
+              >
+                {/* 序号徽章 */}
+                <span
+                  aria-hidden
+                  className="absolute right-4 top-4 grid h-7 w-7 place-items-center rounded-full
+                             border border-primary/40 bg-background/60
+                             font-serif text-xs text-primary"
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+
+                {/* 类型徽章 */}
+                <span className="text-[10px] tracking-[0.3em] text-primary/70">
+                  {r.type === 'article' ? 'LEARN · 专栏' : 'LIBRARY · 行者'}
+                  {r.type === 'chapter' && r.chapterIndex != null
+                    ? ` · 第${r.chapterIndex}章`
+                    : ''}
+                </span>
+
+                {/* 标题 */}
+                <h3 className="mt-1 line-clamp-2 font-serif text-base text-foreground transition group-hover:text-primary md:text-lg">
+                  {r.title}
+                </h3>
+
+                {/* 副标题 */}
+                {r.subtitle && (
+                  <p className="line-clamp-2 text-xs leading-relaxed text-foreground/60 md:text-sm">
+                    {r.subtitle}
+                  </p>
+                )}
+
+                {/* 元信息：作者 / 阅读时长 */}
+                <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-[10px] tracking-wider text-foreground/40">
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      aria-hidden
+                      className="grid h-5 w-5 shrink-0 place-items-center rounded-full
+                                 border border-primary/40 bg-background/60
+                                 font-serif text-[10px] text-primary"
+                    >
+                      ☉
+                    </span>
+                    <span className="truncate">{r.authorName}</span>
+                  </span>
+                  <span className="shrink-0">{r.readingMinutes} 分钟</span>
+                </div>
+
+                {/* 底部装饰线：hover 时延展 */}
+                <span
+                  aria-hidden
+                  className="absolute bottom-0 left-0 h-px w-0 bg-gradient-to-r
+                             from-transparent via-primary/60 to-transparent
+                             transition-all duration-500 group-hover:w-full"
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ===== 吉祥馆入口 ===== */}
       <section>

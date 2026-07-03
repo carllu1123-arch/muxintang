@@ -28,6 +28,10 @@ function getSupabaseAnonKey(): string | undefined {
 }
 
 export function isSupabaseAuthConfigured(): boolean {
+  // mock 模式：直接视为未配置（避免 build 时 fetch 占位 URL 阻塞）
+  if (process.env.NEXT_PUBLIC_USE_MOCK_SUPABASE === 'true') {
+    return false;
+  }
   return Boolean(getSupabaseUrl() && getSupabaseAnonKey());
 }
 

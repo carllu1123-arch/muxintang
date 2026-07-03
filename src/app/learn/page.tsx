@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { CATEGORIES, getArticles } from '@/lib/data';
 import { PageHeader } from '@/components/PageHeader';
+import { LearnCard } from './LearnCard';
 
 export const metadata = {
   title: '密解专栏 · 牧心堂',
@@ -22,40 +22,7 @@ export default async function LearnIndex() {
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
         {CATEGORIES.map((c) => {
           const count = articles.filter((a) => a.category === c.id).length;
-          return (
-            <Link
-              key={c.id}
-              href={c.href}
-              className="group flex flex-col gap-3 rounded-2xl
-                         border border-primary/25 bg-muted/40 p-5
-                         transition hover:border-primary/60 hover:bg-muted
-                         md:p-6"
-            >
-              <div className="flex items-center justify-between">
-                <span
-                  aria-hidden
-                  className="text-3xl text-primary/80 transition group-hover:text-primary"
-                >
-                  {c.glyph}
-                </span>
-                <span className="text-[10px] tracking-[0.3em] text-foreground/40">
-                  {c.sub.toUpperCase()}
-                </span>
-              </div>
-              <h2 className="font-serif text-2xl text-foreground">
-                {c.title}
-              </h2>
-              <p className="text-sm leading-relaxed text-foreground/70">
-                {c.desc}
-              </p>
-              <div className="mt-2 flex items-center justify-between text-xs text-foreground/50">
-                <span>{count} 篇文章</span>
-                <span className="text-primary/70 transition group-hover:text-primary">
-                  进入 ›
-                </span>
-              </div>
-            </Link>
-          );
+          return <LearnCard key={c.id} category={c} count={count} />;
         })}
       </section>
     </div>

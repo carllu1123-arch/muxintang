@@ -491,3 +491,296 @@ $$;
 --               order.paid / order.created
 --   5. 跑 npm run build → npm run start:standalone
 -- =====================================================
+
+-- =====================================================
+-- 13. consultations · 创作者预约（动态主页表单）
+--     用户在 /creators/[slug] 提交预约 → 写入此表
+--     阿阇梨后台（acharya）查看所有记录，普通用户只看自己的
+-- =====================================================
+create table if not exists public.consultations (
+  id              uuid primary key default uuid_generate_v4(),
+  creator_slug    text not null,                 -- 创作者 slug（关联 creators.slug，非外键以免 schema 双向耦合）
+  user_id         uuid references auth.users(id) on delete set null,  -- 预约人（可空，允许匿名/未登录）
+  user_name       text not null check (length(user_name) between 1 and 64),
+  user_contact    text not null check (length(user_contact) between 3 and 128),
+  preferred_date  date,
+  notes           text check (notes is null or length(notes) <= 500),
+  status          text not null default 'pending'
+                  check (status in ('pending', 'contacted', 'confirmed', 'completed', 'cancelled')),
+  created_at      timestamptz not null default now()
+);
+
+-- 索引：按创作者 + 时间倒序查（阿阇梨后台列表）
+create index if not exists idx_consultations_creator_created
+  on public.consultations (creator_slug, created_at desc);
+
+-- 索引：按预约人 + 时间倒序查（用户个人中心后续可扩展）
+create index if not exists idx_consultations_user_created
+  on public.consultations (user_id, created_at desc);
+
+-- 索引：按 status 过滤（pending / contacted 看板）
+create index if not exists idx_consultations_status
+  on public.consultations (status);
+
+-- =====================================================
+-- 13.1 RLS 策略
+--  a) 任何人（含未登录）可插入（开放预约）
+--  b) 用户只能 select 自己的记录（user_id = auth.uid()）
+--  c) acharya / admin 角色可查看所有记录
+--  d) 状态更新仅 acharya / admin 可操作
+-- =====================================================
+alter table public.consultations enable row level security;
+
+-- a) INSERT 公开
+drop policy if exists consultations_insert_anyone on public.consultations;
+create policy consultations_insert_anyone on public.consultations
+  for insert
+  with check (true);
+
+-- b) SELECT 普通用户仅看自己
+drop policy if exists consultations_select_own on public.consultations;
+create policy consultations_select_own on public.consultations
+  for select
+  using (auth.uid() = user_id);
+
+-- c) SELECT acharya / admin 全部可见
+drop policy if exists consultations_select_acharya on public.consultations;
+create policy consultations_select_acharya on public.consultations
+  for select
+  using (
+    exists (
+      select 1 from public.user_profiles
+      where id = auth.uid() and role in ('acharya', 'admin')
+    )
+  );
+
+-- d) UPDATE 仅 acharya / admin（更新 status）
+drop policy if exists consultations_update_acharya on public.consultations;
+create policy consultations_update_acharya on public.consultations
+  for update
+  using (
+    exists (
+      select 1 from public.user_profiles
+      where id = auth.uid() and role in ('acharya', 'admin')
+    )
+  );
+
+-- DELETE 全部禁止（数据留痕）
+-- （不创建任何 DELETE policy → 默认拒绝）
+
+-- =====================================================
+-- 14. analytics_events · 运营埋点（指令二 stats 接口依赖）
+--     此表可能已在生产中独立创建；为保证可移植性，这里给出推荐 schema
+--     若已存在，请跳过 CREATE 部分，仅补 RLS
+-- =====================================================
+create table if not exists public.analytics_events (
+  id          uuid primary key default uuid_generate_v4(),
+  event       text not null,                      -- e.g. 'paywall_triggered'
+  source      text,                                -- e.g. 'tools/name'
+  user_id     uuid references auth.users(id) on delete set null,
+  props       jsonb,                               -- 任意附加维度
+  ts          timestamptz not null default now()
+);
+
+create index if not exists idx_analytics_events_event
+  on public.analytics_events (event);
+create index if not exists idx_analytics_events_user
+  on public.analytics_events (user_id);
+create index if not exists idx_analytics_events_ts
+  on public.analytics_events (ts desc);
+
+-- RLS：只允许 service_role 写入（前端只调 POST /api/analytics/event，由后端落库）
+alter table public.analytics_events enable row level security;
+
+drop policy if exists analytics_events_no_read on public.analytics_events;
+-- 普通用户 / 未登录 不可读（防止数据泄露）
+-- 读操作只能通过 service_role key 在后端执行
+create policy analytics_events_no_read on public.analytics_events
+  for select
+  using (false);
+
+drop policy if exists analytics_events_no_write_anon on public.analytics_events;
+create policy analytics_events_no_write_anon on public.analytics_events
+  for insert
+  with check (false);  -- 直连 DB 禁止写入，必须经 API route 转发（带白名单过滤）
+
+-- =====================================================
+-- 15. study_posts · 灵性研学发帖（指令四 升级 /study 用）
+--     用户通过 /study 上的"记录修行"按钮 → POST /api/study/posts 写入此表
+--     与 journal_entries 的区别：
+--       - journal_entries 偏"已发布精选"，由后端 / 编辑挑选
+--       - study_posts 偏"UGC 实时流"，任何登录/匿名用户都能发
+--     字段保持宽松，让前端 mock 兜底也能跑通
+-- =====================================================
+create table if not exists public.study_posts (
+  id            uuid primary key default uuid_generate_v4(),
+  user_id       uuid references auth.users(id) on delete set null,  -- 发帖人（允许匿名 → null）
+  author_name   text not null default '道友' check (length(author_name) between 1 and 32),
+  title         text check (title is null or length(title) <= 80),  -- 标题可选
+  category      text not null check (category in ('打卡', '感悟', '问答', '分享')),
+  body          text not null check (length(body) between 1 and 2000),  -- 正文必填
+  like_count    int not null default 0,
+  comment_count int not null default 0,
+  is_published  boolean not null default true,
+  published_at  timestamptz not null default now(),
+  created_at    timestamptz not null default now()
+);
+
+-- 索引：按发布时间倒序查（/study 列表流）
+create index if not exists idx_study_posts_published
+  on public.study_posts (published_at desc);
+
+-- 索引：按分类过滤（打卡 / 感悟 / 问答 / 分享 Tab）
+create index if not exists idx_study_posts_category_published
+  on public.study_posts (category, published_at desc);
+
+-- 索引：按发贴人查（个人中心后续可扩展"我的发帖"）
+create index if not exists idx_study_posts_user
+  on public.study_posts (user_id, published_at desc);
+
+-- =====================================================
+-- 15.1 RLS 策略
+--   a) 任何人（含未登录）可插入（开放发帖）
+--   b) 任何人可读 is_published=true 的帖子
+--   c) 发帖人本人或 acharya/admin 可 update / delete
+-- =====================================================
+alter table public.study_posts enable row level security;
+
+drop policy if exists study_posts_insert_anyone on public.study_posts;
+create policy study_posts_insert_anyone on public.study_posts
+  for insert
+  with check (true);
+
+drop policy if exists study_posts_select_published on public.study_posts;
+create policy study_posts_select_published on public.study_posts
+  for select
+  using (is_published = true);
+
+drop policy if exists study_posts_update_owner on public.study_posts;
+create policy study_posts_update_owner on public.study_posts
+  for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists study_posts_update_acharya on public.study_posts;
+create policy study_posts_update_acharya on public.study_posts
+  for update
+  using (
+    exists (
+      select 1 from public.user_profiles
+      where id = auth.uid() and role in ('acharya', 'admin')
+    )
+  );
+
+drop policy if exists study_posts_delete_owner on public.study_posts;
+create policy study_posts_delete_owner on public.study_posts
+  for delete
+  using (auth.uid() = user_id);
+
+drop policy if exists study_posts_delete_acharya on public.study_posts;
+create policy study_posts_delete_acharya on public.study_posts
+  for delete
+  using (
+    exists (
+      select 1 from public.user_profiles
+      where id = auth.uid() and role in ('acharya', 'admin')
+    )
+  );
+
+-- =====================================================
+-- 16. pet_services · 爱宠屋服务登记
+--     来源：/pet/liberation（宠物超度）及其他未来服务线
+--     字段：
+--       id            uuid 主键
+--       user_id       uuid 发请奉的 auth 用户（允许匿名 → null）
+--       user_name     text 登记人称呼（如「棉棉主人」）
+--       pet_name      text 宠物名
+--       pet_type      text 宠物种类（猫/狗/兔/...）
+--       passed_at     date 宠物去世日期（超度场景用；其他服务可空）
+--       blessing_note text 主人家属留言 / 阿阇梨额外回向语
+--       service_type  text 服务类型：'liberation' | 'accessories' | 'diet' | 'naming'
+--       status        text 处理状态：'pending' | 'in_progress' | 'completed'
+--       created_at    timestamptz 提交时间
+--     设计原则：
+--       - 与 auspicious_orders 同思路：写多读少、状态机推进
+--       - 普通用户可插入和查看自己的记录
+--       - acharya / admin 可查看所有并修改状态
+-- =====================================================
+create table if not exists public.pet_services (
+  id            uuid primary key default uuid_generate_v4(),
+  user_id       uuid references auth.users(id) on delete set null,
+  user_name     text not null default '善信' check (length(user_name) between 1 and 32),
+  pet_name      text not null check (length(pet_name) between 1 and 32),
+  pet_type      text not null check (length(pet_type) between 1 and 16),
+  passed_at     date,
+  blessing_note text check (blessing_note is null or length(blessing_note) <= 500),
+  service_type  text not null default 'liberation'
+                check (service_type in ('liberation', 'accessories', 'diet', 'naming')),
+  status        text not null default 'pending'
+                check (status in ('pending', 'in_progress', 'completed', 'cancelled')),
+  created_at    timestamptz not null default now()
+);
+
+-- 索引：按提交时间倒序（后台列表流）
+create index if not exists idx_pet_services_created
+  on public.pet_services (created_at desc);
+
+-- 索引：按 service_type 过滤（不同服务线统计）
+create index if not exists idx_pet_services_type_created
+  on public.pet_services (service_type, created_at desc);
+
+-- 索引：按 status 过滤（阿阇梨拉取 pending 数据）
+create index if not exists idx_pet_services_status
+  on public.pet_services (status, created_at desc);
+
+-- 索引：按 user_id 查（个人中心后续可扩展"我的请奉"）
+create index if not exists idx_pet_services_user
+  on public.pet_services (user_id, created_at desc);
+
+comment on table public.pet_services is
+  '爱宠屋服务登记（宠物超度 / 配饰 / 饮食 / 取名）';
+
+-- =====================================================
+-- 16.1 RLS 策略
+--   a) 任何人（含未登录）可插入（开放请奉）
+--   b) 发请奉人可查看自己的记录
+--   c) acharya / admin 可查看所有 + 修改状态
+--   d) 发请奉人可取消（update status='cancelled'）自己的记录
+-- =====================================================
+alter table public.pet_services enable row level security;
+
+drop policy if exists pet_services_insert_anyone on public.pet_services;
+create policy pet_services_insert_anyone on public.pet_services
+  for insert
+  with check (true);
+
+drop policy if exists pet_services_select_own on public.pet_services;
+create policy pet_services_select_own on public.pet_services
+  for select
+  using (auth.uid() = user_id);
+
+drop policy if exists pet_services_select_acharya on public.pet_services;
+create policy pet_services_select_acharya on public.pet_services
+  for select
+  using (
+    exists (
+      select 1 from public.user_profiles
+      where id = auth.uid() and role in ('acharya', 'admin')
+    )
+  );
+
+drop policy if exists pet_services_update_acharya on public.pet_services;
+create policy pet_services_update_acharya on public.pet_services
+  for update
+  using (
+    exists (
+      select 1 from public.user_profiles
+      where id = auth.uid() and role in ('acharya', 'admin')
+    )
+  );
+
+drop policy if exists pet_services_cancel_own on public.pet_services;
+create policy pet_services_cancel_own on public.pet_services
+  for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

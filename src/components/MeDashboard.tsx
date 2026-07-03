@@ -45,6 +45,7 @@ function productLabel(p: 'scroll' | 'bracelet' | 'sachet' | null | undefined): s
 
 const STATUS_LABEL: Record<string, string> = {
   pending: '待开光',
+  blessing: '加持中',
   blessed: '已开光',
   shipped: '已寄出',
   completed: '已结缘',
@@ -326,12 +327,24 @@ function AuspiciousOrderCard({ summary }: { summary: MeSummary }) {
       <p className="mt-1 text-[11px] text-foreground/55">
         敬奉：<span className="text-foreground/75">{order.recipient}</span> · {timeAgo(order.createdAt)}
       </p>
+
+      {/* 结缘进度流水线（指令三核心） */}
+      <OrderPipeline status={order.status} />
+
       {order.blessingMessage && (
         <p className="mt-3 line-clamp-2 rounded-lg border border-foreground/10
                       bg-black/30 px-3 py-2 text-[11px] italic text-foreground/65">
           &ldquo;{order.blessingMessage}&rdquo;
         </p>
       )}
+
+      {/* 全完成时显示结缘语 */}
+      {isPipelineDone(order.status) && (
+        <p className="mt-3 text-center text-[11px] italic text-primary/85">
+          ✦ 愿此物能护持您日夜安康 ✦
+        </p>
+      )}
+
       <Link
         href="/auspicious"
         className="mt-4 inline-flex items-center gap-1.5 rounded-lg
@@ -341,6 +354,101 @@ function AuspiciousOrderCard({ summary }: { summary: MeSummary }) {
         查看全部请奉 · {summary.orderCount} →
       </Link>
     </article>
+  );
+}
+
+/* ============ 结缘进度流水线 ============
+ * 三个节点 + 两条连线，根据订单状态动态点亮：
+ *   Step 1: 🕊️ 已记录   （pending 即可点亮）
+ *   Step 2: 🌟 加持中   （blessing / blessed）
+ *   Step 3: 📦 已寄出   （shipped / completed）
+ * 已取消的订单：节点全部置灰，标题改为"已取消"
+ */
+
+type PipelineStatus = 'pending' | 'blessing' | 'blessed' | 'shipped' | 'completed' | 'cancelled' | null | undefined;
+
+interface StepDef {
+  key: 'recorded' | 'blessing' | 'shipped';
+  label: string;
+  glyph: string;
+  /** 状态达到此值时点亮（含） */
+  activeSince: ReadonlyArray<string>;
+}
+
+const PIPELINE_STEPS: readonly StepDef[] = [
+  { key: 'recorded', label: '已记录', glyph: '🕊️', activeSince: ['pending', 'blessing', 'blessed', 'shipped', 'completed'] },
+  { key: 'blessing', label: '加持中', glyph: '🌟', activeSince: ['blessing', 'blessed', 'shipped', 'completed'] },
+  { key: 'shipped',  label: '已寄出', glyph: '📦', activeSince: ['shipped', 'completed'] },
+];
+
+function isStepActive(status: PipelineStatus, step: StepDef): boolean {
+  if (!status) return false;
+  if (status === 'cancelled') return false;
+  return step.activeSince.includes(status);
+}
+
+function isPipelineDone(status: PipelineStatus): boolean {
+  return status === 'shipped' || status === 'completed';
+}
+
+function OrderPipeline({ status }: { status: PipelineStatus }) {
+  const isCancelled = status === 'cancelled';
+
+  return (
+    <div className="mt-4">
+      <p className="mb-2 text-[10px] tracking-[0.25em] text-foreground/40">
+        FULFILLMENT · FLOW
+      </p>
+      <div className="flex items-center gap-2">
+        {PIPELINE_STEPS.map((step, idx) => {
+          const active = !isCancelled && isStepActive(status, step);
+          return (
+            <div key={step.key} className="flex flex-1 items-center gap-2">
+              {/* 节点 */}
+              <div className="flex flex-col items-center gap-1">
+                <span
+                  aria-label={step.label}
+                  className={`grid h-9 w-9 place-items-center rounded-full border text-base transition
+                              ${active
+                                ? 'border-primary bg-primary/15 text-primary shadow-[0_0_18px_-6px_rgba(212,175,55,0.7)]'
+                                : isCancelled
+                                  ? 'border-foreground/15 bg-foreground/5 text-foreground/25'
+                                  : 'border-foreground/20 bg-foreground/5 text-foreground/30'}`}
+                >
+                  {active ? step.glyph : (idx + 1)}
+                </span>
+                <span
+                  className={`whitespace-nowrap text-[10px] tracking-wider
+                              ${active
+                                ? 'text-primary'
+                                : isCancelled
+                                  ? 'text-foreground/25 line-through'
+                                  : 'text-foreground/40'}`}
+                >
+                  {step.label}
+                </span>
+              </div>
+              {/* 连接线（非最后一项） */}
+              {idx < PIPELINE_STEPS.length - 1 && (
+                <div className="relative -mt-5 h-px flex-1 overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500
+                                ${isStepActive(status, PIPELINE_STEPS[idx + 1] as StepDef)
+                                  ? 'bg-primary'
+                                  : 'bg-foreground/15'}`}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {isCancelled && (
+        <p className="mt-2 text-center text-[10px] tracking-wider text-foreground/35">
+          · 此订单已取消 ·
+        </p>
+      )}
+    </div>
   );
 }
 

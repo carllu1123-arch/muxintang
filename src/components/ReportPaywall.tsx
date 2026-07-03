@@ -14,13 +14,16 @@ interface ReportPaywallProps {
 /**
  * 牧心堂 · 深度报告付费墙
  *
+ * 视觉统一规则（指令强制）：
+ *   border border-primary/30 bg-black/60 backdrop-blur-md rounded-xl p-6 text-center
+ *
  * 用法：
  *   {isLocked && <ReportPaywall tierRequired="monthly" categoryTitle="生命格局" />}
  *
  * 设计：
- * - 渐变遮罩 + 卡片 + CTA 按钮
- * - 移动优先；PC 端文字更舒展
- * - 暂不读用户订阅状态，按"未付费"展示（订阅状态接入后会动态切换）
+ *   - 统一黑金磨砂卡片，所有付费墙使用同一基础类名
+ *   - 移动优先；PC 端文字更舒展
+ *   - 暂不读用户订阅状态，按"未付费"展示（订阅状态接入后会动态切换）
  */
 export function ReportPaywall({
   tierRequired,
@@ -35,24 +38,21 @@ export function ReportPaywall({
 
   return (
     <section
-      className="relative -mt-32 overflow-hidden rounded-2xl
-                 border border-primary/30
-                 bg-gradient-to-b from-transparent via-background/80 to-background
-                 pt-32 backdrop-blur-md"
+      className="border border-primary/30 bg-black/60 backdrop-blur-md rounded-xl p-6 text-center"
       aria-label="付费内容"
     >
-      <div className="flex flex-col items-center gap-6 p-6 text-center md:gap-8 md:p-10">
+      <div className="flex flex-col items-center gap-4">
         {/* 装饰 */}
-        <span aria-hidden className="font-serif text-5xl text-primary md:text-6xl">
+        <span aria-hidden className="font-serif text-4xl text-primary md:text-5xl">
           ☷
         </span>
 
         <header>
-          <h3 className="font-serif text-2xl text-foreground md:text-3xl">
+          <h3 className="font-serif text-xl text-foreground md:text-2xl">
             续读「{categoryTitle}」深度报告
           </h3>
           {description ? (
-            <p className="mt-3 text-sm leading-relaxed text-foreground/80 md:text-base">
+            <p className="mt-2 text-sm leading-relaxed text-foreground/80 md:text-base">
               {description}
             </p>
           ) : (
@@ -85,7 +85,7 @@ export function ReportPaywall({
         {/* 定价 */}
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-baseline gap-1">
-            <span className="font-serif text-3xl text-primary md:text-4xl">
+            <span className="font-serif text-2xl text-primary md:text-3xl">
               {tierPrice}
             </span>
           </div>
@@ -95,10 +95,10 @@ export function ReportPaywall({
         </div>
 
         {/* CTA */}
-        <div className="flex w-full max-w-sm flex-col gap-3">
+        <div className="flex w-full max-w-sm flex-col gap-2">
           <Link
             href="/pricing"
-            className="rounded-lg bg-primary px-6 py-3 text-center
+            className="rounded-lg bg-primary px-6 py-2.5 text-center
                        font-serif text-base text-background transition
                        hover:bg-primary/90"
           >
@@ -106,7 +106,7 @@ export function ReportPaywall({
           </Link>
           <Link
             href="/login"
-            className="rounded-lg border border-primary/30 px-6 py-3 text-center
+            className="rounded-lg border border-primary/30 px-6 py-2.5 text-center
                        text-sm text-foreground/80 transition
                        hover:border-primary hover:text-primary"
           >

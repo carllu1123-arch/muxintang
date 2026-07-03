@@ -20,6 +20,10 @@ function getSupabaseServiceKey(): string | undefined {
 }
 
 export function isSupabaseConfigured(): boolean {
+  // mock 模式：直接视为未配置（避免 build 时对占位 URL 发起真实网络请求）
+  if (process.env.NEXT_PUBLIC_USE_MOCK_SUPABASE === 'true') {
+    return false;
+  }
   return Boolean(getSupabaseUrl() && (getSupabaseAnonKey() || getSupabaseServiceKey()));
 }
 

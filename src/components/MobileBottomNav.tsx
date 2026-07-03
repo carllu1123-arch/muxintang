@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { SearchPortal } from "@/components/SearchPortal";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { PointsBadge } from "@/components/PointsBadge";
 
 /**
@@ -12,27 +12,82 @@ import { PointsBadge } from "@/components/PointsBadge";
  * - PC 端（≥ 768px）由 `md:hidden` 隐藏
  * - 黑金朱砂配色，与全局主题一致
  * - 包含 iOS 安全区适配（safe-area-bottom）
- * - 第 2 位为搜索入口（SearchPortal client component）
- * - "我的" Tab 右上角显示积分徽章（PointsBadge，登录后可见）
- * - 移动端地址栏自动隐藏：用户首次产生滚动时，scrollTo(0, 1) 欺骗
- *   浏览器折叠地址栏；后续不再触发（避免与用户主动滚动冲突）
  *
- * Tab 顺序：首页 / 搜索 / 密解 / 故事 / 研习 / 我的
+ * 5 Tab 道场版（PC 顶部 7 项菜单的精简版）：
+ *   1. 道场  →  /            首屏：Hero + 阿阇梨对话 CTA
+ *   2. 智测  →  /tools       2+4 核心漏斗（择日/流年 免费；生命代码/情缘/姓名/家居 会员）
+ *   3. 专栏  →  /learn       密解专栏（TTS + AI 摘要 + 付费墙）
+ *                       — PC 端已被并入「密法灵学 → /channel」上栏
+ *   4. 故事  →  /library     行者故事（沉浸阅读 + 划线批注）
+ *   5. 我的  →  /me          数字道场（晨音 + 阅读 + 积分 + 订单）
+ *
+ * 注：吉祥馆 / 智创师 / 法脉源 / 爱宠屋 / 密法灵学 不占用底部 Tab，通过：
+ *   - 首页 Hero CTA → 吉祥馆 / 爱宠屋
+ *   - 密解专栏/行者故事内文链接 → 智创师 / 法脉源
+ *   - 我的页内 6 宫格 → 智创师 / 吉祥馆
+ *
+ * 积分徽章：挂在「我的」Tab 右上角（用户更关心自己的积分）
+ *
+ * 【磨砂玻璃滚动效果】（与 PC 顶栏视觉一致）
+ *   - 基础类对齐 PC 顶栏：bg-background/* + backdrop-blur-md + border-primary/10
+ *   - 滚动感知：scrolled=false（顶部）→ bg-background/70（轻玻璃，让内容透出）
+ *               scrolled=true（已滚动）→ bg-background/90（重玻璃，强化磨砂感）
+ *   - 300ms 平滑过渡（transition-colors）
+ *   - rAF 节流：避免 scroll 高频触发 setState
+ *
+ * 移动端地址栏自动隐藏：保留原行为（首次滚动时 scrollTo(1) 欺骗浏览器折叠）
  */
+
 const TABS = [
-  { label: "首页", href: "/", glyph: "⌂" },
-  { label: "密解", href: "/learn", glyph: "✦" },
+  { label: "道场", href: "/",        glyph: "⌂" },
+  { label: "智测", href: "/tools",   glyph: "◐" },
+  { label: "专栏", href: "/learn",   glyph: "✦" },
   { label: "故事", href: "/library", glyph: "❡" },
-  { label: "研习", href: "/study", glyph: "◈" },
-  { label: "我的", href: "/me", glyph: "☯" },
+  { label: "我的", href: "/me",      glyph: "☯" },
 ] as const;
 
+/** 触发「重玻璃」的最少滚动距离（避免临界值抖动） */
+const SCROLL_THRESHOLD = 8;
+
+function isTabActive(href: string, pathname: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function MobileBottomNav({ className = "" }: { className?: string }) {
-  // 移动端地址栏自动隐藏
-  //   - 仅在首次滚动触发一次（用 ref 守门，避免干扰用户后续滚动）
-  //   - 仅窄屏（< 768px）生效：matchMedia 监听，断开后自动 stop
-  //   - 仅在 scrollY === 0 时 scrollTo(1)：用户已离开顶部时不干预
-  //   - passive: true：不阻塞滚动主线程
+  const pathname = usePathname() ?? "/";
+
+  /* ============ 1. 滚动状态：玻璃"轻↔重"切换 ============ */
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 767.98px)");
+    if (!mql.matches) return;
+
+    let rafId: number | null = null;
+
+    const updateScrolled = () => {
+      rafId = null;
+      setScrolled(window.scrollY > SCROLL_THRESHOLD);
+    };
+
+    const onScroll = () => {
+      // rAF 节流：scroll 高频时，每帧最多 setState 一次
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(updateScrolled);
+    };
+
+    // 初始化一次（直接进入页面可能已滚到中间，避免 hydration 后闪烁）
+    setScrolled(window.scrollY > SCROLL_THRESHOLD);
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  /* ============ 2. 地址栏自动隐藏（保留原行为） ============ */
   const addressBarHiddenRef = useRef(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -57,54 +112,59 @@ export function MobileBottomNav({ className = "" }: { className?: string }) {
   return (
     <nav
       aria-label="主导航"
-      className={`fixed inset-x-0 bottom-0 z-50 md:hidden
-                  bg-black/90 backdrop-blur-lg
-                  border-t border-primary/20
-                  safe-area-bottom ${className}`}
+      className={[
+        // 定位 + PC 隐藏
+        "fixed inset-x-0 bottom-0 z-50 md:hidden",
+        // 玻璃 token（与 PC 顶栏对齐）
+        "backdrop-blur-md",
+        "border-t border-primary/10",
+        "safe-area-bottom",
+        "transition-colors duration-300",
+        // 滚动感知：轻玻璃（顶部）↔ 重玻璃（已滚动）
+        scrolled ? "bg-background/90" : "bg-background/70",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
-      <ul className="mx-auto flex max-w-md items-stretch justify-around px-2">
-        {/* 首页 */}
-        <li className="flex-1">
-          <Link
-            href="/"
-            className="flex flex-col items-center gap-0.5 py-2
-                       text-foreground/70 transition
-                       active:text-primary"
-          >
-            <span aria-hidden className="text-lg leading-none">
-              ⌂
-            </span>
-            <span className="text-[11px] tracking-wider">首页</span>
-          </Link>
-        </li>
-        {/* 搜索入口（client component，唤起 SearchModal） */}
-        <li className="flex-1">
-          <SearchPortal variant="mobile" />
-        </li>
-        {/* 其余导航 */}
-        {TABS.slice(1).map((tab) => (
-          <li key={tab.href} className="relative flex-1">
-            <Link
-              href={tab.href}
-              className="flex flex-col items-center gap-0.5 py-2
-                         text-foreground/70 transition
-                         active:text-primary"
-            >
-              <span aria-hidden className="text-lg leading-none">
-                {tab.glyph}
-              </span>
-              <span className="text-[11px] tracking-wider">
-                {tab.label}
-              </span>
-            </Link>
-            {/* "我的" Tab 右上角积分徽章（登录后可见） */}
-            {tab.label === "我的" && (
-              <span className="pointer-events-none absolute right-1 top-1">
-                <PointsBadge variant="mobile" />
-              </span>
-            )}
-          </li>
-        ))}
+      <ul className="mx-auto flex max-w-md items-stretch justify-around px-1">
+        {TABS.map((tab) => {
+          const active = isTabActive(tab.href, pathname);
+          return (
+            <li key={tab.href} className="relative flex-1">
+              <Link
+                href={tab.href}
+                aria-current={active ? "page" : undefined}
+                className={`flex flex-col items-center gap-0.5 py-2 transition
+                            ${active
+                              ? "text-primary [text-shadow:0_0_10px_rgba(212,175,55,0.55)]"
+                              : "text-foreground/70 active:text-primary"}`}
+              >
+                <span aria-hidden className="text-lg leading-none">
+                  {tab.glyph}
+                </span>
+                <span className="text-[11px] tracking-wider">
+                  {tab.label}
+                </span>
+                {/* 激活态：金线指示 */}
+                {active && (
+                  <span
+                    aria-hidden
+                    className="absolute -top-px left-1/2 h-0.5 w-8 -translate-x-1/2
+                               rounded-full bg-primary
+                               shadow-[0_0_10px_rgba(212,175,55,0.7)]"
+                  />
+                )}
+              </Link>
+              {/* 「我的」Tab 右上角积分徽章（登录后可见） */}
+              {tab.href === "/me" && (
+                <span className="pointer-events-none absolute right-1 top-1">
+                  <PointsBadge variant="mobile" />
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

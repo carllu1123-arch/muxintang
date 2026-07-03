@@ -53,8 +53,8 @@ const TOOLS: SearchEntry[] = [
   },
   {
     type: 'tool',
-    title: '姓名心解',
-    subtitle: '一字藏玄机，听名字的回响',
+    title: '姓名智取',
+    subtitle: '听音律 · 查五行 · 得阿阇梨心解',
     href: '/tools/name',
     glyph: '✎',
     categoryLabel: '智测工具',

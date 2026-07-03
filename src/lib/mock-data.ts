@@ -64,6 +64,19 @@ export interface Article {
   publishedAt: string; // ISO date
   readingMinutes: number;
   body: string[]; // 段落数组
+  /**
+   * 升维三（AI 引擎化）：
+   *   - 搜索引擎 / 豆包 / Kimi 等大模型抓取摘要（150-200 字）
+   *   - 占位值，可由 Dify 工作流自动生成
+   *   - 写入 JSON-LD Article.description
+   */
+  aiSummary: string;
+  /**
+   * 升维三（AI 引擎化）：结构化标签
+   *   - 用于 JSON-LD keywords + Open Graph article:tag
+   *   - 3-5 个，覆盖分类 / 主题 / 修行法门
+   */
+  aiTags: string[];
 }
 
 export const ARTICLES: Article[] = [
@@ -82,6 +95,9 @@ export const ARTICLES: Article[] = [
       '先放下评判，让这串数字变成一条河流，流过你的身体、心意、觉性。',
       '然后你就会明白：所谓命运，不是被困住，而是被看见。',
     ],
+    aiSummary:
+      '生辰不是宿命，而是注脚。本文以「生命代码」隐喻八字，提出放下评判、让数字化做河流流过身心的修行方法——认识自己的第一步，不是「信」，而是「听」。',
+    aiTags: ['生命代码', '八字入门', '禅修', '自我认知', '东方哲学'],
   },
   {
     category: 'lifecode',
@@ -98,6 +114,9 @@ export const ARTICLES: Article[] = [
       '金主决断，水主智慧，木主生长，火主文明，土主承载。',
       '你以为你缺，其实是你忘了怎么用。',
     ],
+    aiSummary:
+      '「命中缺金」是常见误解。作者从五行本质出发，论证：五行不缺，只是被遮蔽。调候不是补救，是疏通——金主决断、水主智慧、木主生长、火主文明、土主承载，找到你生命中不流动的那一行，让它流起来。',
+    aiTags: ['五行', '调候', '八字进阶', '金木水火土', '修行实操'],
   },
   {
     category: 'habitat',
@@ -113,6 +132,9 @@ export const ARTICLES: Article[] = [
       '不必拘泥于"东南摆什么、西北摆什么"的死法。',
       '让阳光、空气、动线服务于你和家人的状态，这就是最朴素的风水。',
     ],
+    aiSummary:
+      '房子不是容器，是有呼吸的生命。本文从玄空飞星出发，落到「进门先看气」「明堂是否开阔」等可操作观察，提倡让阳光、空气、动线服务于家人状态——这就是最朴素的风水。',
+    aiTags: ['家居风水', '玄空飞星', '明堂', '动线', '现代堪舆'],
   },
   {
     category: 'habitat',
@@ -127,6 +149,9 @@ export const ARTICLES: Article[] = [
       '真正重要的是：你的生活节奏、家人关系、职业状态。',
       '户型服务于人，而非反过来。',
     ],
+    aiSummary:
+      '「属虎不能住西边」是把古老学问简化成标签。本文作者从现代生活节奏、家人关系、职业状态出发，提出户型服务于人、而非人服从户型的家居观——生肖与户型的对应不必迷信。',
+    aiTags: ['生肖', '现代家居', '风水误区', '生活节奏', '户型'],
   },
   {
     category: 'name',
@@ -141,6 +166,9 @@ export const ARTICLES: Article[] = [
       '但名字不是一个分数。它是你被叫出、写出、想起时的全部回声。',
       '笔画只是入口，音律、字形、五行、字义四者合参，方见真章。',
     ],
+    aiSummary:
+      '「五格剖象」把姓名学工具化，是常见误区。本文作者指出：名字不是分数，而是你被叫出、写出、想起时的全部回声。笔画只是入口，音律、字形、五行、字义四者合参，方见真章。',
+    aiTags: ['姓名学', '五格剖象', '字形', '音律', '取名误区'],
   },
   {
     category: 'name',
@@ -156,6 +184,9 @@ export const ARTICLES: Article[] = [
       '音律场不是玄学，是语言学 + 心理学的结合。',
       '让名字的发声与你的内在状态对齐，本身就是一种修行。',
     ],
+    aiSummary:
+      '音律场不是玄学，是语言学与心理学的结合。本文邀请读者读三遍自己的名字，从「硬软」「快慢」感受音律，并提出让名字的发声与内在状态对齐——这本身就是一种修行。',
+    aiTags: ['音律场', '声调', '姓名学', '语言学', '心理共鸣'],
   },
   {
     category: 'teacher',
@@ -172,6 +203,9 @@ export const ARTICLES: Article[] = [
       '如果你的答案是"不是"——也继续。',
       '因为这个问题本身，就是修行的开始。',
     ],
+    aiSummary:
+      '「我真的在过想要的生活吗？」——根本上师开示第一篇。不要急着用大脑回答，让这个问题沉到胸口、沉到丹田。无论答「是」还是「不是」，这个问题本身，就是修行的开始。',
+    aiTags: ['静坐', '根本上师开示', '自我提问', '禅修入门', '觉性'],
   },
   {
     category: 'teacher',
@@ -186,6 +220,9 @@ export const ARTICLES: Article[] = [
       '你不需要"战胜"它，你只需要让它流过。',
       '像观河流一样观你的焦虑——它会改变形状，但不会永远停留。',
     ],
+    aiSummary:
+      '焦虑不是敌人，是身体在对你说「请慢一点」。根本上师开示第二篇：不需要「战胜」焦虑，只需要让它流过——像观河流一样观你的焦虑，它会改变形状，但不会永远停留。',
+    aiTags: ['焦虑', '根本上师开示', '观照', '情绪管理', '禅修实操'],
   },
 ];
 
@@ -381,6 +418,7 @@ export const JOURNAL_ENTRIES: JournalEntry[] = [
 
 export interface Creator {
   id: string;
+  slug: string; // URL 友好的标识（mock 中与 id 一致；DB 中独立字段）
   name: string;
   honor: string; // 称号
   lineage: string; // 法脉
@@ -392,6 +430,7 @@ export interface Creator {
 export const CREATORS: Creator[] = [
   {
     id: 'jiguang',
+    slug: 'jiguang',
     name: '寂光阿阇梨',
     honor: '根本上师',
     lineage: '唐密东密传承',
@@ -401,6 +440,7 @@ export const CREATORS: Creator[] = [
   },
   {
     id: 'mingxin',
+    slug: 'mingxin',
     name: '明心居士',
     honor: '研究员',
     lineage: '玄空飞星 · 藏医结合',
@@ -410,6 +450,7 @@ export const CREATORS: Creator[] = [
   },
   {
     id: 'kongxing',
+    slug: 'kongxing',
     name: '空行居士',
     honor: '研究员',
     lineage: '姓名学 · 音律学',
@@ -419,6 +460,7 @@ export const CREATORS: Creator[] = [
   },
   {
     id: 'ruyi',
+    slug: 'ruyi',
     name: '如意阿阇梨',
     honor: '讲师',
     lineage: '净土 · 禅',

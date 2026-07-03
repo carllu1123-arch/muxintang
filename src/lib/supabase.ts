@@ -123,9 +123,11 @@ export function createClient() {
 }
 
 export function isSupabaseConfigured(): boolean {
-  // mock 模式视为「已配置」，让上层逻辑走完持久化流程
-  if (typeof window !== 'undefined' && isMockSupabaseEnabled()) {
-    return true;
+  // mock 模式：
+  //   - 客户端：视为「已配置」→ 让上层走完持久化流程（通过 supabase 代理走 mock 客户端）
+  //   - 服务端：视为「未配置」→ 跳过 DB 调用（避免 build 时对占位 URL 阻塞）
+  if (process.env.NEXT_PUBLIC_USE_MOCK_SUPABASE === 'true') {
+    return typeof window !== 'undefined';
   }
   return Boolean(getSupabaseUrl() && getSupabaseAnonKey());
 }

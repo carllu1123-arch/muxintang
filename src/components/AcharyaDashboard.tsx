@@ -21,6 +21,7 @@ import {
   type AcharyaOrder,
   type AcharyaComment,
 } from '@/lib/acharya-data';
+import { AcharyaStats } from '@/components/AcharyaStats';
 
 type OrderStatus = AcharyaOrder['status'];
 
@@ -101,6 +102,9 @@ export function AcharyaDashboard({
 
       {/* 模块 2：行者故事未精选评论 */}
       <CommentsModule initialComments={initialComments} />
+
+      {/* 模块 3：运营数据看板（埋点聚合） */}
+      <AcharyaStats />
     </div>
   );
 }

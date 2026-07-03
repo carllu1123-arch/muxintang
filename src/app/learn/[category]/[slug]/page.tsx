@@ -9,6 +9,7 @@ import {
 import { PageHeader } from '@/components/PageHeader';
 import { ReportPaywall } from '@/components/ReportPaywall';
 import { ArticleTTS } from '@/components/ArticleTTS';
+import { AIGeneratedCover } from '@/components/AIGeneratedCover';
 import { getCurrentSession, canAccess } from '@/lib/session';
 import { getRelatedTools } from '@/lib/related-tools';
 
@@ -24,9 +25,107 @@ export async function generateMetadata({
 }) {
   const { category, slug } = await params;
   const article = await getArticle(category, slug);
+  if (!article) {
+    return { title: '未找到 · 牧心堂' };
+  }
+  // 升维三：Open Graph / Twitter 完整卡片（豆包 / Kimi 抓取用）
+  const description =
+    article.ai_summary ??
+    article.subtitle ??
+    `${article.title} · ${article.reading_minutes} 分钟阅读`;
+  const tags = (article.ai_tags ?? []).join('，');
   return {
-    title: article ? `${article.title} · 牧心堂` : '未找到 · 牧心堂',
+    title: `${article.title} · 牧心堂`,
+    description,
+    keywords: tags,
+    authors: article.author_name ? [{ name: article.author_name }] : undefined,
+    openGraph: {
+      type: 'article',
+      title: article.title,
+      description,
+      siteName: '牧心堂',
+      locale: 'zh_CN',
+      publishedTime: article.published_at,
+      authors: article.author_name ? [article.author_name] : undefined,
+      tags: article.ai_tags ?? undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.title,
+      description,
+    },
   };
+}
+
+/** 升维三：构建结构化数据（JSON-LD / Article + FAQPage） */
+function buildJsonLd(
+  article: NonNullable<Awaited<ReturnType<typeof getArticle>>>,
+  cat: (typeof CATEGORIES)[number],
+  canonical: string,
+) {
+  const summary =
+    article.ai_summary ??
+    article.subtitle ??
+    article.body.slice(0, 120).replace(/\n+/g, ' ');
+  const tags = article.ai_tags ?? [];
+  const wordCount = article.body.replace(/\s+/g, '').length;
+
+  // 基础 Article schema
+  const articleLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: summary,
+    keywords: tags.join(', '),
+    inLanguage: 'zh-CN',
+    wordCount,
+    timeRequired: `PT${article.reading_minutes}M`,
+    image: article.cover_url ?? undefined,
+    datePublished: article.published_at,
+    dateModified: article.published_at,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+    articleSection: cat.title,
+    author: article.author_name
+      ? {
+          '@type': 'Person',
+          name: article.author_name,
+        }
+      : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: '牧心堂',
+      alternateName: 'Muxintang',
+      url: 'https://muxintang.com',
+    },
+    isAccessibleForFree: article.is_free,
+  };
+
+  // FAQPage schema（仅在文章显式声明 FAQ 时使用）
+  // 当前 mock 文章不带 FAQ 数据，预留入口
+  const faqs: Array<{ q: string; a: string }> = [];
+  // 如果 body 包含「Q:」「A:」结构，自动提取
+  const faqRegex = /Q[：:]\s*(.+?)\n+A[：:]\s*([\s\S]+?)(?=\n+Q[：:]|$)/g;
+  let m: RegExpExecArray | null;
+  while ((m = faqRegex.exec(article.body)) !== null) {
+    faqs.push({ q: m[1].trim(), a: m[2].trim() });
+  }
+
+  if (faqs.length >= 2) {
+    return [
+      articleLd,
+      {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      },
+    ];
+  }
+
+  return [articleLd];
 }
 
 function splitBody(body: string): string[] {
@@ -68,14 +167,58 @@ export default async function ArticlePage({
   // 反向推荐：根据文章 category 推荐相关智测工具（学 → 测 闭环）
   const relatedTools = getRelatedTools(category);
 
+  // 升维三：构建结构化数据
+  const canonical = `/learn/${category}/${slug}`;
+  const jsonLdBlocks = buildJsonLd(article, cat, canonical);
+
   return (
     <article className="flex flex-col gap-10 py-6 md:gap-16 md:py-12">
+      {/* 升维三：JSON-LD 结构化数据（豆包 / Kimi / Google 抓取用） */}
+      {jsonLdBlocks.map((ld, i) => (
+        <script
+          key={`ld-${i}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+        />
+      ))}
+
       <PageHeader
         eyebrow={`${cat.sub.toUpperCase()} · ${cat.title}`}
         title={article.title}
         subtitle={article.subtitle ?? undefined}
         back={{ href: `/learn/${category}`, label: cat.title }}
       />
+
+      {/* AI 引擎摘要（升维三：豆包 / Kimi 抓取内容；用户也可见） */}
+      {article.ai_summary && (
+        <aside
+          className="rounded-2xl border border-primary/30
+                     bg-gradient-to-br from-primary/5 via-transparent to-transparent
+                     p-4 backdrop-blur-md md:p-5"
+          aria-label="AI 摘要"
+        >
+          <header className="mb-2 flex items-center gap-2 text-[10px] tracking-[0.3em] text-primary/70">
+            <span aria-hidden>✦</span>
+            <span>AI · SUMMARY · 大模型摘要</span>
+          </header>
+          <p className="text-sm leading-relaxed text-foreground/85 md:text-base">
+            {article.ai_summary}
+          </p>
+          {article.ai_tags && article.ai_tags.length > 0 && (
+            <ul className="mt-3 flex flex-wrap gap-1.5">
+              {article.ai_tags.map((t) => (
+                <li
+                  key={t}
+                  className="rounded-full border border-primary/20 bg-background/40 px-2.5 py-0.5
+                             text-[10px] tracking-wider text-foreground/60"
+                >
+                  # {t}
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+      )}
 
       {/* 元信息 */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs tracking-wider text-foreground/50">
@@ -101,6 +244,15 @@ export default async function ArticlePage({
           </>
         )}
       </div>
+
+      {/* AI 文生图封面（基于 title + category 自动绘制） */}
+      <AIGeneratedCover
+        title={article.title}
+        category={category}
+        className="w-full md:max-w-2xl"
+        width={512}
+        height={512}
+      />
 
       {/* 阿阇梨朗读（TTS） */}
       <ArticleTTS title={article.title} body={article.body} />

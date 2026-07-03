@@ -27,6 +27,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase-server';
+import { getAuthClient, isSupabaseAuthConfigured } from '@/lib/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -52,6 +54,8 @@ const ALLOWED_EVENTS = new Set<string>([
   'chooseday_queried',
   // 商业
   'paywall_viewed',
+  'paywall_triggered',     // 用户点付费墙按钮 / 弹出拦截时
+  'ai_explanation_called', // 阿阇梨心解 / 深度调频 AI 调用
   'upgrade_clicked',
 ]);
 
@@ -101,6 +105,36 @@ export async function POST(req: NextRequest) {
       receivedAt: Date.now(),
     }),
   );
+
+  // 写库（如已配置 Supabase）：用于阿阇梨后台 stats 看板聚合
+  // 失败不阻塞响应（埋点是辅助，丢一条不能影响主流程）
+  if (isSupabaseConfigured()) {
+    try {
+      // 拿当前 userId（已登录时附带）
+      let userId: string | null = null;
+      if (isSupabaseAuthConfigured()) {
+        try {
+          const auth = await getAuthClient();
+          if (auth) {
+            const { data } = await auth.auth.getUser();
+            userId = data?.user?.id ?? null;
+          }
+        } catch {
+          userId = null;
+        }
+      }
+      const sb = createClient();  // 优先 service_role，可绕过 RLS 写 analytics_events
+      await (sb.from('analytics_events') as any).insert({
+        event,
+        source,
+        user_id: userId,
+        props,
+        ts: new Date(ts).toISOString(),
+      });
+    } catch (e) {
+      console.warn('[analytics] DB insert failed (non-fatal):', (e as Error).message);
+    }
+  }
 
   return NextResponse.json({
     ok: true,

@@ -103,6 +103,15 @@ export function BaziChat({
   /** 是否已把当前 birth 同步到 user_profiles（去重） */
   const birthSyncedRef = useRef<string>('');
 
+  /**
+   * 升维二（多感官道场）：流式共鸣触发器
+   *   - 每次 chunk 抵达，自增 streamPulse
+   *   - 传给 Mandala 做 600ms 缩放（呼-吸）
+   *   - 节流到 180ms，避免一帧内多次脉冲
+   */
+  const [streamPulse, setStreamPulse] = useState(0);
+  const lastPulseAtRef = useRef<number>(0);
+
   // bazi 变化时通知父级（用于启用「生成画册」等下游动作）
   useEffect(() => {
     onBaziChange?.(bazi);
@@ -260,6 +269,12 @@ export function BaziChat({
               out[out.length - 1] = { role: 'assistant', content: snap };
               return out;
             });
+            // 升维二：每段 chunk 触发一次曼荼罗共鸣（节流 180ms）
+            const now = Date.now();
+            if (now - lastPulseAtRef.current >= 180) {
+              lastPulseAtRef.current = now;
+              setStreamPulse((p) => p + 1);
+            }
           } else if (ev.type === 'end') {
             const el = ev.dayMasterElement as WuXing | undefined;
             if (el && ['金', '木', '水', '火', '土'].includes(el)) {
@@ -460,6 +475,7 @@ export function BaziChat({
             bazi={bazi}
             element={mandalaElement}
             isActive={mandalaActive}
+            pulseTick={streamPulse}
           />
           {/* 解读来源角标 */}
           {bazi && (

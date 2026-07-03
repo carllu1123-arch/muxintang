@@ -6,7 +6,7 @@
  * 映射规则：
  *   lifecode → /tools/bazi       （生命代码：按生辰解码）
  *   habitat  → /tools/habitat    （家居环境：十问堪舆）
- *   name     → /tools/name       （姓名心解：五行音律）
+ *   name     → /tools/name       （姓名智取：五行音律）
  *   teacher  → /tools/match + /tools/bazi  （阿阇梨开示 → 合盘 + 排盘，2 个入口）
  *
  * 用法（Server Component 内同步调用）：
@@ -46,8 +46,8 @@ const CATEGORY_TO_TOOLS: Record<string, RelatedTool[]> = {
   name: [
     {
       href: '/tools/name',
-      title: '姓名心解',
-      desc: '姓 + 名 + 生辰，解读名字的五行音律与文化回向。',
+      title: '姓名智取',
+      desc: '姓 + 名 + 生辰，推演名字的五行音律与命运回向。',
       glyph: '✎',
     },
   ],

@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { PageHeader } from '@/components/PageHeader';
 
 export const metadata = {
-  title: '阿阇梨法脉 · 牧心堂',
+  title: '法脉源 · 牧心堂',
   description: '唐密传承 · 李居明嫡传 — 从祖师到大师姐的法脉源流',
 };
 

@@ -103,6 +103,10 @@ export interface Database {
           reading_minutes: number;
           view_count: number;
           like_count: number;
+          /** 升维三：AI 引擎摘要（豆包 / Kimi 等大模型抓取用，150-200 字） */
+          ai_summary: string | null;
+          /** 升维三：结构化标签（3-5 个，写入 JSON-LD keywords） */
+          ai_tags: string[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -190,6 +194,33 @@ export interface Database {
           published_at?: string;
         };
         Update: Partial<Database['public']['Tables']['journal_entries']['Insert']>;
+        Relationships: [];
+      };
+      study_posts: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          author_name: string;
+          title: string | null;
+          category: '打卡' | '感悟' | '问答' | '分享';
+          body: string;
+          like_count: number;
+          comment_count: number;
+          is_published: boolean;
+          published_at: string;
+          created_at: string;
+        };
+        Insert: Omit<
+          Database['public']['Tables']['study_posts']['Row'],
+          'id' | 'created_at' | 'is_published' | 'like_count' | 'comment_count' | 'published_at'
+        > & {
+          id?: string;
+          is_published?: boolean;
+          like_count?: number;
+          comment_count?: number;
+          published_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['study_posts']['Insert']>;
         Relationships: [];
       };
       user_subscriptions: {
@@ -337,6 +368,32 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['user_memories']['Insert']>;
         Relationships: [];
       };
+      pet_services: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          user_name: string;
+          pet_name: string;
+          pet_type: string;
+          passed_at: string | null;
+          blessing_note: string | null;
+          service_type: 'liberation' | 'accessories' | 'diet' | 'naming';
+          status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+          created_at: string;
+        };
+        Insert: Omit<
+          Database['public']['Tables']['pet_services']['Row'],
+          'id' | 'created_at' | 'status' | 'user_name' | 'service_type'
+        > & {
+          id?: string;
+          user_name?: string;
+          service_type?: 'liberation' | 'accessories' | 'diet' | 'naming';
+          status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['pet_services']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: {
       v_articles_with_author: {
@@ -360,6 +417,10 @@ export interface Database {
           reading_minutes: number;
           view_count: number;
           like_count: number;
+          /** 升维三：AI 引擎摘要（来自 articles.ai_summary） */
+          ai_summary: string | null;
+          /** 升维三：结构化标签（来自 articles.ai_tags） */
+          ai_tags: string[] | null;
         };
       };
       v_novels_with_author: {
@@ -403,10 +464,12 @@ export type Creator = Database['public']['Tables']['creators']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
 export type Novel = Database['public']['Tables']['novels']['Row'];
 export type JournalEntry = Database['public']['Tables']['journal_entries']['Row'];
+export type StudyPost = Database['public']['Tables']['study_posts']['Row'];
 export type Subscription = Database['public']['Tables']['user_subscriptions']['Row'];
 export type BaziReading = Database['public']['Tables']['bazi_readings']['Row'];
 export type AuspiciousOrder = Database['public']['Tables']['auspicious_orders']['Row'];
 export type UserMemory = Database['public']['Tables']['user_memories']['Row'];
+export type PetService = Database['public']['Tables']['pet_services']['Row'];
 
 export type UserTier = Profile['tier'];
 export type LearnCategory = Article['category'];
